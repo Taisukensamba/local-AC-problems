@@ -2,7 +2,8 @@
   color-scheme: light;
   --bg: #f7f1e8;
   --card: #fff7ec;
-  --ink: #1b1b1b;
+  --ink: #2f6bff;
+  --ink-hover: #1f4ec7;
   --muted: #6b5e57;
   --accent: #d96f32;
   --accent-dark: #a64c1e;
@@ -18,6 +19,18 @@ body {
   font-family: "IBM Plex Sans", "Avenir Next", "Helvetica Neue", sans-serif;
   background: radial-gradient(circle at top, #fff3df 0%, var(--bg) 45%, #f4e8db 100%);
   color: var(--ink);
+}
+
+a {
+  color: var(--ink);
+}
+
+a:visited {
+  color: var(--ink);
+}
+
+a:hover {
+  color: var(--ink-hover);
 }
 
 .page {
@@ -281,7 +294,6 @@ button:hover {
 }
 
 .list-title a {
-  color: var(--ink);
   text-decoration: none;
   font-weight: 600;
 }
@@ -318,17 +330,30 @@ button:hover {
   border: 1px solid var(--border);
   padding: 4px;
   text-align: center;
-  font-size: 13px;
+  font-size: 20px;
   width: 11%;
 }
 
 .abc-table th:first-child,
 .abc-table td:first-child {
-  text-align: left;
+  text-align: center;
   font-weight: 600;
 }
 
+.abc-table td:first-child a {
+  text-decoration: none;
+}
+
+.abc-table td:first-child a:visited {
+  color: var(--ink);
+}
+
+.abc-table td:first-child a:hover {
+  color: var(--ink-hover);
+}
+
 .cell {
+  --cell-index-size: 20px;
   display: inline-flex;
   width: 100%;
   height: 100%;
@@ -344,6 +369,15 @@ button:hover {
   gap: 2px;
 }
 
+.cell.has-ring {
+  flex-direction: row;
+  gap: 6px;
+}
+
+.cell.has-ring .diff-ring {
+  --size: var(--cell-index-size);
+}
+
 .cell.ac {
   background: #bfe8c6;
   border-color: #7ac48b;
@@ -352,60 +386,88 @@ button:hover {
   min-height: 60px;
 }
 
-.cell.diff-unknown {
+.cell.ac.contest-ac {
+  background: #8fd19d;
+  border-color: #5eae72;
+}
+
+.cell.contest-submitted {
+  background: #f4d35e;
+  border-color: #d7b64b;
+}
+
+.cell.non-contest-submitted {
+  background: #f7e6a8;
+  border-color: #e1cf8a;
+}
+
+.cell.diff-unknown,
+.diff-ring.diff-unknown {
   color: #8a8a8a;
 }
 
-.cell.diff-neg {
+.cell.diff-neg,
+.diff-ring.diff-neg {
   color: #7a7a7a;
 }
 
-.cell.diff-0 {
+.cell.diff-0,
+.diff-ring.diff-0 {
   color: #6f6f6f;
 }
 
-.cell.diff-400 {
+.cell.diff-400,
+.diff-ring.diff-400 {
   color: #8b5a2b;
 }
 
-.cell.diff-800 {
+.cell.diff-800,
+.diff-ring.diff-800 {
   color: #2d7d46;
 }
 
-.cell.diff-1200 {
+.cell.diff-1200,
+.diff-ring.diff-1200 {
   color: #2aa6c8;
 }
 
-.cell.diff-1600 {
+.cell.diff-1600,
+.diff-ring.diff-1600 {
   color: #2e5bd6;
 }
 
-.cell.diff-2000 {
+.cell.diff-2000,
+.diff-ring.diff-2000 {
   color: #e0c143;
 }
 
-.cell.diff-2400 {
+.cell.diff-2400,
+.diff-ring.diff-2400 {
   color: #e08b3a;
 }
 
-.cell.diff-2800 {
+.cell.diff-2800,
+.diff-ring.diff-2800 {
   color: #d54a4a;
 }
 
-.cell.diff-3200 {
-  color: #a97142;
+.cell.diff-3200,
+.diff-ring.diff-3200 {
+  color: #b87333;
 }
 
-.cell.diff-3600 {
-  color: #a9a9b0;
+.cell.diff-3600,
+.diff-ring.diff-3600 {
+  color: #c0c6d1;
 }
 
-.cell.diff-4000 {
-  color: #d4af37;
+.cell.diff-4000,
+.diff-ring.diff-4000 {
+  color: #d7b24a;
 }
 
 .cell-index {
-  font-size: 15px;
+  font-size: var(--cell-index-size);
   font-weight: 700;
   line-height: 1;
 }
@@ -416,6 +478,41 @@ button:hover {
   line-height: 1;
 }
 
+.diff-ring {
+  --size: 30px;
+  --diff-percent: 0%;
+  --ring-track: #ececec;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: var(--muted);
+  background: conic-gradient(currentColor var(--diff-percent), var(--ring-track) 0);
+}
+
+.diff-ring-static {
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent 45%),
+    linear-gradient(135deg, currentColor 0%, #ffffff 35%, currentColor 70%, #000000 100%);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.45), 0 0 14px currentColor;
+}
+
+.diff-ring.diff-3200.diff-ring-static {
+  background: radial-gradient(circle at 30% 30%, #f7d7b4, transparent 45%),
+    linear-gradient(135deg, #8a4a1e 0%, #e7b07a 40%, #b87333 70%, #5a3214 100%);
+}
+
+.diff-ring.diff-3600.diff-ring-static {
+  background: radial-gradient(circle at 30% 30%, #f4f7ff, transparent 45%),
+    linear-gradient(135deg, #9aa3ad 0%, #e3e8f0 40%, #c0c6d1 70%, #6f7680 100%);
+}
+
+.diff-ring.diff-4000.diff-ring-static {
+  background: radial-gradient(circle at 30% 30%, #fff3c4, transparent 45%),
+    linear-gradient(135deg, #9c7a1f 0%, #f3d373 40%, #d7b24a 70%, #7a5a13 100%);
+}
 .hide-diff .cell-diff {
   display: none;
 }
@@ -483,9 +580,12 @@ button:hover {
 }
 
 .card a {
-  color: var(--accent-dark);
   text-decoration: none;
   font-weight: 600;
+}
+
+.card a:hover {
+  color: var(--ink-hover);
 }
 
 .card small {

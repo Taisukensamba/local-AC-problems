@@ -98,6 +98,27 @@ function diffClassFor(diffValue) {
   return "diff-4000";
 }
 
+function diffPercentFor(diffValue) {
+  if (typeof diffValue !== "number" || Number.isNaN(diffValue) || diffValue < 0) return 0;
+  const start = Math.floor(diffValue / 400) * 400;
+  const percent = ((diffValue - start) / 400) * 100;
+  return Math.max(0, Math.min(100, Math.round(percent)));
+}
+
+function buildDiffRing(diffValue) {
+  const diffClass = diffClassFor(diffValue);
+  const diffLabel = diffValue === null ? "?" : diffValue;
+  const ring = document.createElement("span");
+  ring.className = `diff-ring cell-diff ${diffClass}`.trim();
+  if (typeof diffValue === "number" && diffValue >= 3200) {
+    ring.classList.add("diff-ring-static");
+  }
+  ring.style.setProperty("--diff-percent", `${diffPercentFor(diffValue)}%`);
+  ring.title = diffValue === null ? "Difficulty: ?" : `Difficulty: ${diffValue}`;
+  ring.setAttribute("aria-label", diffValue === null ? "Difficulty: ?" : `Difficulty: ${diffLabel}`);
+  return ring;
+}
+
 function setActiveTab(key) {
   tabButtons.forEach((button) => {
     if (button.closest(".tabs-secondary")) return;
@@ -171,8 +192,6 @@ function _ensureListGroups() {
 
 function _renderListItem(item) {
   const diffValue = typeof item.difficulty === "number" ? item.difficulty : null;
-  const diffLabel = diffValue === null ? "?" : item.difficulty;
-  const diffClass = diffClassFor(diffValue);
   const wrapper = document.createElement("div");
   wrapper.className = "list-item";
   const left = document.createElement("div");
@@ -184,10 +203,11 @@ function _renderListItem(item) {
   link.textContent = item.title || item.problem_id;
   const meta = document.createElement("span");
   meta.className = "list-meta-badges";
-  meta.innerHTML = `
-    <span class="list-badge">${item.contest_id} ${item.task_index}</span>
-    <span class="list-badge cell-diff ${diffClass}">${diffLabel}</span>
-  `;
+  const contestBadge = document.createElement("span");
+  contestBadge.className = "list-badge";
+  contestBadge.textContent = `${item.contest_id} ${item.task_index}`;
+  meta.appendChild(contestBadge);
+  meta.appendChild(buildDiffRing(diffValue));
   left.appendChild(link);
   left.appendChild(meta);
   const right = document.createElement("span");
@@ -269,7 +289,7 @@ function buildContestCell(contestId) {
   link.href = `https://atcoder.jp/contests/${contestId}`;
   link.target = "_blank";
   link.rel = "noreferrer";
-  link.textContent = contestId;
+  link.textContent = contestId.toUpperCase();
   cell.appendChild(link);
   return cell;
 }
@@ -285,17 +305,29 @@ function buildProblemCell(state, index, prob) {
   const diffClass = diffClassFor(diffValue);
   const link = document.createElement("a");
   link.className = `cell ${diffClass} ${prob.is_ac ? "ac" : ""}`.trim();
+  if (prob.contest_ac) {
+    link.classList.add("contest-ac");
+  } else if (prob.contest_submitted && !prob.is_ac) {
+    link.classList.add("contest-submitted");
+  } else if (prob.non_contest_wa && !prob.is_ac) {
+    link.classList.add("non-contest-submitted");
+  }
   link.href = prob.url;
   link.target = "_blank";
   link.rel = "noreferrer";
   link.title = prob.title;
   if (state.key === "ahc") {
-    link.innerHTML = `<span class="cell-index">${index}</span>`;
+    const indexEl = document.createElement("span");
+    indexEl.className = "cell-index";
+    indexEl.textContent = index;
+    link.appendChild(indexEl);
   } else {
-    link.innerHTML = `
-      <span class="cell-index">${index}</span>
-      <span class="cell-diff">${diffLabel}</span>
-    `;
+    link.classList.add("has-ring");
+    link.appendChild(buildDiffRing(diffValue));
+    const indexEl = document.createElement("span");
+    indexEl.className = "cell-index";
+    indexEl.textContent = index;
+    link.appendChild(indexEl);
   }
   cell.appendChild(link);
   return cell;
