@@ -134,7 +134,10 @@ def _contests_with_problems(contest_ids: list[str]) -> list[dict]:
 
     grouped = _with_conn(load)
     return [
-        {"contest_id": contest_id, "problems": grouped.get(contest_id, [])}
+        {
+            "contest_id": contest_id,
+            "problems": grouped.get(contest_id, []),
+        }
         for contest_id in contest_ids
     ]
 

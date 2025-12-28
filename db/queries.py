@@ -197,13 +197,33 @@ def problems_by_contest(
         return {}
     placeholders = ",".join(["?"] * len(contest_ids))
     sql = (
-        "SELECT p.contest_id, p.task_index, p.title, p.url, p.difficulty, COALESCE(pr.is_ac, 0) "
+        "SELECT p.contest_id, p.task_index, p.title, p.url, p.difficulty, COALESCE(pr.is_ac, 0), "
+        "EXISTS ("
+        "SELECT 1 FROM submissions s "
+        "JOIN contests c ON c.contest_id = p.contest_id "
+        "WHERE s.problem_id = p.problem_id AND s.user_id = ? "
+        "AND s.result = 'AC' "
+        "AND c.start_epoch IS NOT NULL AND c.duration_sec IS NOT NULL "
+        "AND s.epoch_second BETWEEN c.start_epoch AND c.start_epoch + c.duration_sec"
+        "), "
+        "EXISTS ("
+        "SELECT 1 FROM submissions s "
+        "JOIN contests c ON c.contest_id = p.contest_id "
+        "WHERE s.problem_id = p.problem_id AND s.user_id = ? "
+        "AND c.start_epoch IS NOT NULL AND c.duration_sec IS NOT NULL "
+        "AND s.epoch_second BETWEEN c.start_epoch AND c.start_epoch + c.duration_sec"
+        "), "
+        "EXISTS ("
+        "SELECT 1 FROM submissions s "
+        "WHERE s.problem_id = p.problem_id AND s.user_id = ? "
+        "AND s.result != 'AC'"
+        ") "
         "FROM problems p "
         "LEFT JOIN progress pr ON pr.problem_id = p.problem_id AND pr.user_id = ? "
         f"WHERE p.contest_id IN ({placeholders}) "
         "ORDER BY p.contest_id, p.task_index"
     )
-    rows = conn.execute(sql, [user_id, *contest_ids]).fetchall()
+    rows = conn.execute(sql, [user_id, user_id, user_id, user_id, *contest_ids]).fetchall()
     grouped: dict[str, list[dict]] = {}
     for row in rows:
         grouped.setdefault(row[0], []).append(
@@ -213,6 +233,9 @@ def problems_by_contest(
                 "url": row[3],
                 "difficulty": row[4],
                 "is_ac": bool(row[5]),
+                "contest_ac": bool(row[6]),
+                "contest_submitted": bool(row[7]),
+                "non_contest_wa": bool(row[8]),
             }
         )
     return grouped
