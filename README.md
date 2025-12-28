@@ -22,7 +22,7 @@ rate_limit = 1.0
 mode = "cookie" # api / cookie / hybrid
 
 [difficulty]
-source_url = "https://kenkoooo.com/atcoder/resources/problem-models.json"
+source_url = "/path/to/local-AC-problems/data/problem-models.json"
 
 [cookie]
 revel_session = "REVEL_SESSION_HERE"
@@ -37,7 +37,7 @@ dir_path = "data/cache"
 ```bash
 export AC_USER_ID=your_atcoder_id
 export AC_REVEL_SESSION=REVEL_SESSION_HERE
-export AC_DIFFICULTY_SOURCE_URL=https://kenkoooo.com/atcoder/resources/problem-models.json
+export AC_DIFFICULTY_SOURCE_URL=/path/to/local-AC-problems/data/problem-models.json
 export AC_CONFIG_PATH=config/config.toml
 ```
 
