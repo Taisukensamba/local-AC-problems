@@ -270,6 +270,16 @@ def parse_contest_list(payload: str) -> list[dict]:
     return contests
 
 
+def parse_contest_standings(payload: str) -> tuple[dict | None, list[dict]]:
+    data = _parse_api_payload(payload)
+    result = data.get("result", {})
+    if not isinstance(result, dict):
+        return None, []
+    contest = result.get("contest")
+    problems = result.get("problems") or []
+    return contest, problems
+
+
 def _classify_contest_name(name: str) -> str:
     if "Educational Codeforces Round" in name:
         return "cf-ecr"
@@ -296,3 +306,82 @@ def sync_contests(
     payload = fetch_json(url)
     contests = parse_contest_list(payload)
     return upsert_contests(conn, contests)
+
+
+def sync_contest_tasks(
+    fetch_json: Callable[[str], str], conn, contest_ids: list[str]
+) -> dict:
+    updated_contests = 0
+    upserted_problems = 0
+    failed_contests: list[str] = []
+    for contest_id_raw in contest_ids:
+        url = f"https://codeforces.com/api/contest.standings?contestId={contest_id_raw}&from=1&count=1"
+        try:
+            payload = fetch_json(url)
+            contest, problems = parse_contest_standings(payload)
+        except Exception:
+            failed_contests.append(contest_id_raw)
+            continue
+        contest_id = contest_id_raw
+        if contest and contest.get("id") is not None:
+            contest_id = str(contest.get("id"))
+        contest_uid = codeforces_oj.contest_uid(contest_id)
+        if contest:
+            name = contest.get("name") or f"Codeforces {contest_id}"
+            category = _classify_contest_name(name)
+            updated_contests += upsert_contests(
+                conn,
+                [
+                    {
+                        "contest_uid": contest_uid,
+                        "oj": codeforces_oj.name,
+                        "contest_id": contest_id,
+                        "title": name,
+                        "start_epoch": contest.get("startTimeSeconds"),
+                        "duration_sec": contest.get("durationSeconds"),
+                        "rated_range": None,
+                        "category": category,
+                    }
+                ],
+            )
+        normalized: list[dict] = []
+        tags_by_uid: dict[str, list[str]] = {}
+        for problem in problems:
+            index = problem.get("index")
+            name = problem.get("name") or ""
+            tags = problem.get("tags") or []
+            problemset_name = problem.get("problemsetName")
+            problem_uid = codeforces_oj.problem_uid(
+                contest_id=contest_id,
+                index=index,
+                name=name,
+                problemset_name=problemset_name,
+            )
+            normalized.append(
+                {
+                    "problem_uid": problem_uid,
+                    "oj": codeforces_oj.name,
+                    "contest_uid": contest_uid,
+                    "contest_id": contest_id,
+                    "task_index": index,
+                    "title": name,
+                    "point": problem.get("points"),
+                    "url": _build_problem_url(
+                        {"contestId": contest_id, "index": index, "name": name}
+                    ),
+                    "difficulty": problem.get("rating"),
+                    "solved_count": None,
+                    "tags_json": json.dumps(tags),
+                    "updated_epoch": None,
+                }
+            )
+            tags_by_uid[problem_uid] = [str(tag) for tag in tags]
+        if normalized:
+            upserted_problems += upsert_problems(conn, normalized)
+            for problem_uid, tags in tags_by_uid.items():
+                replace_problem_tags(conn, problem_uid, tags)
+    return {
+        "contests": updated_contests,
+        "problems": upserted_problems,
+        "failed": failed_contests,
+    }

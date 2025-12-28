@@ -13,6 +13,7 @@ from config.loader import ConfigError, load_config
 from crawler.archive import crawl_archive
 from crawler.codeforces_api import (
     sync_contests as sync_codeforces_contests,
+    sync_contest_tasks as sync_codeforces_contest_tasks,
     sync_problemset as sync_codeforces_problemset,
     sync_user_status as sync_codeforces_user_status,
 )
@@ -148,6 +149,26 @@ def _contest_id_from_uid(contest_uid: str) -> str:
     if ":" in contest_uid:
         return contest_uid.split(":", 1)[1]
     return contest_uid
+
+
+def _codeforces_missing_task_contest_ids(conn) -> list[str]:
+    categories = [
+        "cf-ecr",
+        "cf-global",
+        "cf-div1+2",
+        "cf-div1",
+        "cf-div2",
+        "cf-div3",
+        "cf-div4",
+    ]
+    missing: list[str] = []
+    for category in categories:
+        contest_uids = list_contest_uids_by_category(
+            conn, codeforces_oj.name, category, 10000, 0
+        )
+        missing_uids = list_contests_missing_tasks(conn, contest_uids)
+        missing.extend(_contest_id_from_uid(uid) for uid in missing_uids)
+    return sorted(set(missing))
 
 
 def _contests_with_problems(contest_uids: list[str]) -> list[dict]:
@@ -425,8 +446,17 @@ def start_sync_codeforces_contests(background_tasks: BackgroundTasks) -> dict:
             result = sync_codeforces_contests(
                 client.get_text, conn, app.state.config.codeforces.include_gym
             )
+            missing_contests = _codeforces_missing_task_contest_ids(conn)
+            task_result = None
+            if missing_contests:
+                task_result = sync_codeforces_contest_tasks(
+                    client.get_text, conn, missing_contests
+                )
             conn.commit()
-            app.state.sync_status["last_result"] = {"codeforces_contests": result}
+            payload = {"codeforces_contests": result}
+            if task_result is not None:
+                payload["codeforces_contest_tasks"] = task_result
+            app.state.sync_status["last_result"] = payload
         finally:
             conn.close()
 
