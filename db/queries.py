@@ -224,7 +224,7 @@ def problems_by_contest(
         return {}
     placeholders = ",".join(["?"] * len(contest_uids))
     sql = (
-        "SELECT p.contest_uid, p.contest_id, p.task_index, p.title, p.url, p.difficulty, "
+        "SELECT p.contest_uid, p.oj, p.contest_id, p.task_index, p.title, p.url, p.difficulty, "
         "COALESCE(pr.is_ac, 0), "
         "EXISTS ("
         "SELECT 1 FROM submissions s "
@@ -256,15 +256,16 @@ def problems_by_contest(
     for row in rows:
         grouped.setdefault(row[0], []).append(
             {
-                "contest_id": row[1],
-                "task_index": row[2],
-                "title": row[3],
-                "url": row[4],
-                "difficulty": row[5],
-                "is_ac": bool(row[6]),
-                "contest_ac": bool(row[7]),
-                "contest_submitted": bool(row[8]),
-                "non_contest_wa": bool(row[9]),
+                "oj": row[1],
+                "contest_id": row[2],
+                "task_index": row[3],
+                "title": row[4],
+                "url": row[5],
+                "difficulty": row[6],
+                "is_ac": bool(row[7]),
+                "contest_ac": bool(row[8]),
+                "contest_submitted": bool(row[9]),
+                "non_contest_wa": bool(row[10]),
             }
         )
     return grouped

@@ -128,9 +128,21 @@ async function postJSON(url, payload) {
   return res.json();
 }
 
-function diffClassFor(diffValue) {
+function diffClassFor(diffValue, oj) {
   if (diffValue === null || diffValue === undefined) return "diff-unknown";
   if (diffValue < 0) return "diff-neg";
+  if (oj === "codeforces") {
+    if (diffValue < 1200) return "diff-cf-0";
+    if (diffValue < 1400) return "diff-cf-1200";
+    if (diffValue < 1600) return "diff-cf-1400";
+    if (diffValue < 1900) return "diff-cf-1600";
+    if (diffValue < 2100) return "diff-cf-1900";
+    if (diffValue < 2300) return "diff-cf-2100";
+    if (diffValue < 2400) return "diff-cf-2300";
+    if (diffValue < 2600) return "diff-cf-2400";
+    if (diffValue < 3000) return "diff-cf-2600";
+    return "diff-cf-3000";
+  }
   if (diffValue < 400) return "diff-0";
   if (diffValue < 800) return "diff-400";
   if (diffValue < 1200) return "diff-800";
@@ -144,22 +156,46 @@ function diffClassFor(diffValue) {
   return "diff-4000";
 }
 
-function diffPercentFor(diffValue) {
+function diffPercentFor(diffValue, oj) {
   if (typeof diffValue !== "number" || Number.isNaN(diffValue) || diffValue < 0) return 0;
+  if (oj === "codeforces") {
+    const ranges = [
+      [0, 1199],
+      [1200, 1399],
+      [1400, 1599],
+      [1600, 1899],
+      [1900, 2099],
+      [2100, 2299],
+      [2300, 2399],
+      [2400, 2599],
+      [2600, 2999],
+    ];
+    for (const [min, max] of ranges) {
+      if (diffValue >= min && diffValue <= max) {
+        const percent = ((diffValue - min) / (max - min + 1)) * 100;
+        return Math.max(0, Math.min(100, Math.round(percent)));
+      }
+    }
+    return 100;
+  }
   const start = Math.floor(diffValue / 400) * 400;
   const percent = ((diffValue - start) / 400) * 100;
   return Math.max(0, Math.min(100, Math.round(percent)));
 }
 
-function buildDiffRing(diffValue) {
-  const diffClass = diffClassFor(diffValue);
+function buildDiffRing(diffValue, oj) {
+  const diffClass = diffClassFor(diffValue, oj);
   const diffLabel = diffValue === null ? "?" : diffValue;
   const ring = document.createElement("span");
   ring.className = `diff-ring cell-diff ${diffClass}`.trim();
-  if (typeof diffValue === "number" && diffValue >= 3200) {
+  if (
+    typeof diffValue === "number" &&
+    ((oj === "codeforces" && diffValue >= 3000) ||
+      (oj !== "codeforces" && diffValue >= 3200))
+  ) {
     ring.classList.add("diff-ring-static");
   }
-  ring.style.setProperty("--diff-percent", `${diffPercentFor(diffValue)}%`);
+  ring.style.setProperty("--diff-percent", `${diffPercentFor(diffValue, oj)}%`);
   ring.title = diffValue === null ? "Difficulty: ?" : `Difficulty: ${diffValue}`;
   ring.setAttribute("aria-label", diffValue === null ? "Difficulty: ?" : `Difficulty: ${diffLabel}`);
   return ring;
@@ -256,7 +292,7 @@ function _renderListItem(item) {
   const contestLabel = item.contest_id ? `${item.contest_id} ${item.task_index || ""}`.trim() : "";
   contestBadge.textContent = `${item.oj}${contestLabel ? ` · ${contestLabel}` : ""}`;
   meta.appendChild(contestBadge);
-  meta.appendChild(buildDiffRing(diffValue));
+  meta.appendChild(buildDiffRing(diffValue, item.oj));
   if (item.tags && item.tags.length) {
     item.tags.slice(0, 3).forEach((tag) => {
       const tagEl = document.createElement("span");
@@ -404,7 +440,7 @@ function buildProblemCell(state, index, prob) {
 
 function buildProblemLink(state, index, prob) {
   const diffValue = typeof prob.difficulty === "number" ? prob.difficulty : null;
-  const diffClass = diffClassFor(diffValue);
+  const diffClass = diffClassFor(diffValue, prob.oj);
   const link = document.createElement("a");
   link.className = `cell ${diffClass} ${prob.is_ac ? "ac" : ""}`.trim();
   if (prob.contest_ac) {
@@ -419,7 +455,7 @@ function buildProblemLink(state, index, prob) {
   link.rel = "noreferrer";
   link.title = prob.title;
   link.classList.add("has-ring");
-  link.appendChild(buildDiffRing(diffValue));
+  link.appendChild(buildDiffRing(diffValue, prob.oj));
   const indexEl = document.createElement("span");
   indexEl.className = "cell-index";
   indexEl.textContent = prob.task_index || index;
