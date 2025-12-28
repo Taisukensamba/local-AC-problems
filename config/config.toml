@@ -1,0 +1,16 @@
+user_id = "your_atcoder_id"
+rate_limit = 1.0
+
+[sync]
+mode = "cookie" # api / cookie / hybrid
+
+[difficulty]
+source_url = "https://kenkoooo.com/atcoder/resources/problem-models.json"
+
+[cookie]
+revel_session = "REVEL_SESSION_HERE"
+
+[cache]
+enabled = true
+ttl_sec = 3600
+dir_path = "data/cache"

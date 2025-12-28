@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+START=${1:-235}
+END=${2:-320}
+MODE=${3:-cookie}
+BASE_URL=${BASE_URL:-http://127.0.0.1:8000}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+wait_sync() {
+  while true; do
+    running=$(python3 - <<PY
+import json
+import sys
+import urllib.request
+
+url = "${BASE_URL}/api/sync/status"
+try:
+    with urllib.request.urlopen(url, timeout=5) as res:
+        raw = res.read().decode("utf-8")
+except Exception:
+    print("unknown")
+    raise SystemExit(0)
+
+try:
+    s = json.loads(raw)
+except json.JSONDecodeError:
+    print("unknown")
+    raise SystemExit(0)
+
+print(str(s.get("running", False)).lower())
+PY
+)
+    [ "$running" = "false" ] && break
+    sleep 1
+  done
+}
+
+for n in $(seq -w "$START" "$END"); do
+  echo "sync tasks+submissions abc${n}"
+  curl -s -X POST "$BASE_URL/api/sync" \
+    -H 'Content-Type: application/json' \
+    -d "{\"contest\": false, \"tasks\": true, \"submissions\": false, \"contest_ids\": [\"abc${n}\"]}" >/dev/null
+  wait_sync
+  curl -s -X POST "$BASE_URL/api/sync" \
+    -H 'Content-Type: application/json' \
+    -d "{\"contest\": false, \"tasks\": false, \"submissions\": true, \"mode\": \"${MODE}\", \"contest_ids\": [\"abc${n}\"]}" >/dev/null
+  wait_sync
+  sleep 1
+  done
+
+python3 "$SCRIPT_DIR/import_difficulty.py"

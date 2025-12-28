@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ローカル版AtCoder Problems</title>
+  <link rel="stylesheet" href="/ui/styles.css" />
+</head>
+
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1>ローカル版AtCoder Problems</h1>
+      <p class="user" id="user">user: -</p>
+      <div class="sync">
+        <input id="sync-contests" type="text" placeholder="abc331 arc121 agc060" />
+        <button id="sync-run" type="button">同期する</button>
+        <div class="sync-full">
+          <button id="sync-all" type="button">全同期</button>
+        </div>
+        <span id="sync-status" class="sync-status">sync: idle</span>
+      </div>
+    </header>
+
+      <section class="panel">
+        <div class="tabs">
+          <button class="tab-button is-active" data-tab="tables">Tables</button>
+          <button class="tab-button" data-tab="dashboard">Dashboard</button>
+          <button class="tab-button" data-tab="list">List</button>
+        </div>
+        <div class="tabs tabs-secondary">
+          <button class="tab-button is-active" data-tab="abc">ABC</button>
+          <button class="tab-button" data-tab="arc">ARC</button>
+          <button class="tab-button" data-tab="agc">AGC</button>
+          <button class="tab-button" data-tab="ahc">AHC</button>
+        </div>
+        <div class="toggles">
+          <label class="toggle">
+            <input type="checkbox" id="toggle-completed" />
+            Hide Completed Contests
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-diff" checked />
+            Show Difficulty
+          </label>
+        </div>
+      </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="abc">
+        <div class="results-head">
+          <h2>ABC Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+              <th>G</th>
+              <th>H</th>
+            </tr>
+          </thead>
+          <tbody id="abc-body"></tbody>
+        </table>
+      </div>
+      <div id="abc-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="arc">
+        <div class="results-head">
+          <h2>ARC Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+            </tr>
+          </thead>
+          <tbody id="arc-body"></tbody>
+        </table>
+      </div>
+      <div id="arc-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="agc">
+        <div class="results-head">
+          <h2>AGC Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+            </tr>
+          </thead>
+          <tbody id="agc-body"></tbody>
+        </table>
+      </div>
+      <div id="agc-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="ahc">
+        <div class="results-head">
+          <h2>AHC Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+            </tr>
+          </thead>
+          <tbody id="ahc-body"></tbody>
+        </table>
+      </div>
+      <div id="ahc-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel dashboard" data-tab-panel="dashboard">
+      <div class="results-head">
+        <h2>ダッシュボード</h2>
+        <span>progress</span>
+      </div>
+      <div class="dashboard-grid">
+        <div>
+          <h3>Difficulty別AC</h3>
+          <div id="summary" class="summary"></div>
+        </div>
+        <div>
+          <h3>直近の提出</h3>
+          <div id="recent" class="recent"></div>
+        </div>
+      </div>
+    </section>
+
+      <section class="panel list-panel" data-tab-panel="list">
+        <div class="results-head">
+          <h2>Problem List</h2>
+          <span>difficulty grouped</span>
+        </div>
+        <div class="list-controls">
+          <div class="list-tabs">
+            <button class="tab-button is-active" data-list-status="all">All</button>
+            <button class="tab-button" data-list-status="unsolved">未AC</button>
+            <button class="tab-button" data-list-status="solved">AC済</button>
+          </div>
+          <div id="list-diff-tabs" class="list-tabs"></div>
+          <div class="list-meta">
+            <span id="list-status">loading...</span>
+          </div>
+        </div>
+        <div id="list-groups" class="list-groups"></div>
+        <button id="list-load-more" class="list-load" type="button">Load more</button>
+      </section>
+  </main>
+  <script src="/ui/app.js"></script>
+</body>
+
+</html>
