@@ -1,0 +1,26 @@
+{
+  "contest_slug": "ahc048",
+  "contest_category": "ahc",
+  "generated_at": "2025-12-28T15:55:25.426430+09:00",
+  "rated_only": true,
+  "participants_used": 993,
+  "rating_summary": {
+    "min": 7.0,
+    "median": 1414.0,
+    "max": 3335.0
+  },
+  "tasks": {
+    "ahc048_a": {
+      "difficulty": 230,
+      "n": 993,
+      "ac": 899,
+      "flags": []
+    },
+    "ahc048_b": {
+      "difficulty": 825,
+      "n": 993,
+      "ac": 743,
+      "flags": []
+    }
+  }
+}

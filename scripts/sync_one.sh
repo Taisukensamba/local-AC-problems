@@ -15,7 +15,7 @@ import sys
 contest_ids = sys.argv[1:]
 print(json.dumps({
     "contest": False,
-    "tasks": False,
+    "tasks": True,
     "submissions": True,
     "mode": "cookie",
     "submissions_incremental": True,

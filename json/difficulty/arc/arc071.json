@@ -1,0 +1,46 @@
+{
+  "contest_slug": "arc071",
+  "contest_category": "arc",
+  "generated_at": "2025-12-28T15:43:46.144086+09:00",
+  "rated_only": true,
+  "participants_used": 457,
+  "rating_summary": {
+    "min": 6.0,
+    "median": 1592.0,
+    "max": 2766.0
+  },
+  "tasks": {
+    "arc071_a": {
+      "difficulty": 680,
+      "n": 457,
+      "ac": 450,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc071_b": {
+      "difficulty": 1641,
+      "n": 457,
+      "ac": 286,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc071_c": {
+      "difficulty": 1739,
+      "n": 457,
+      "ac": 246,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc071_d": {
+      "difficulty": 2336,
+      "n": 457,
+      "ac": 88,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

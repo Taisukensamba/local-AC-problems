@@ -1,0 +1,30 @@
+{
+  "status": "OK",
+  "result": {
+    "problems": [
+      {
+        "contestId": 1000,
+        "index": "A",
+        "name": "Problem A",
+        "type": "PROGRAMMING",
+        "rating": 800,
+        "tags": ["dp", "math"],
+        "points": 500
+      },
+      {
+        "index": "B",
+        "name": "Non Contest",
+        "type": "PROGRAMMING",
+        "tags": ["greedy"],
+        "problemsetName": "special"
+      }
+    ],
+    "problemStatistics": [
+      {
+        "contestId": 1000,
+        "index": "A",
+        "solvedCount": 1234
+      }
+    ]
+  }
+}

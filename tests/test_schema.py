@@ -19,4 +19,6 @@ class SchemaTest(unittest.TestCase):
                 conn.close()
         self.assertIn("contests", tables)
         self.assertIn("problems", tables)
+        self.assertIn("problem_tags", tables)
         self.assertIn("submissions", tables)
+        self.assertIn("sync_state", tables)

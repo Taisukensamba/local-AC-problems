@@ -160,6 +160,32 @@ button:hover {
 }
 
 .tabs-secondary {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.tabs-secondary .tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.tabs-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f2e7d9;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  min-width: 96px;
+  justify-content: center;
+}
+
+.tabs-secondary {
   margin-top: 12px;
 }
 
@@ -332,6 +358,16 @@ button:hover {
   text-align: center;
   font-size: 20px;
   width: 11%;
+}
+
+.cell-group {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+}
+
+.cell-group .cell {
+  width: 100%;
 }
 
 .abc-table th:first-child,

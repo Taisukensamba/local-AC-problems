@@ -5,6 +5,7 @@ import time
 from typing import Callable
 
 from db.dao import update_problem_difficulties
+from oj.atcoder import atcoder_oj
 
 
 def parse_problem_models(payload: str) -> list[dict]:
@@ -32,7 +33,9 @@ def parse_problem_models(payload: str) -> list[dict]:
             continue
         items.append(
             {
-                "problem_id": problem_id,
+                "problem_uid": atcoder_oj.problem_uid(
+                    contest_id=None, index=None, name=None, problem_id=problem_id
+                ),
                 "difficulty": entry.get("difficulty"),
             }
         )

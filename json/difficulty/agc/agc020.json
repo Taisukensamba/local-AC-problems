@@ -1,0 +1,62 @@
+{
+  "contest_slug": "agc020",
+  "contest_category": "agc",
+  "generated_at": "2025-12-28T15:50:49.255637+09:00",
+  "rated_only": true,
+  "participants_used": 1252,
+  "rating_summary": {
+    "min": 4.0,
+    "median": 1233.5,
+    "max": 3749.0
+  },
+  "tasks": {
+    "agc020_a": {
+      "difficulty": -78,
+      "n": 1252,
+      "ac": 1232,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc020_b": {
+      "difficulty": 1404,
+      "n": 1252,
+      "ac": 683,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc020_c": {
+      "difficulty": 2259,
+      "n": 1252,
+      "ac": 231,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc020_d": {
+      "difficulty": 3062,
+      "n": 1252,
+      "ac": 51,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc020_e": {
+      "difficulty": 2944,
+      "n": 1252,
+      "ac": 67,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc020_f": {
+      "difficulty": 5000,
+      "n": 1252,
+      "ac": 0,
+      "flags": [
+        "NO_AC"
+      ]
+    }
+  }
+}

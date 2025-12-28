@@ -5,13 +5,19 @@ import unittest
 from crawler.difficulty_import import import_difficulty, parse_problem_models
 from db.dao import upsert_contests, upsert_problems
 from db.schema import connect, init_db
+from oj.atcoder import atcoder_oj
 
 
 class DifficultyImportTest(unittest.TestCase):
     def test_parse_problem_models(self) -> None:
         payload = pathlib.Path("data/fixtures/problem-models.json").read_text(encoding="utf-8")
         items = parse_problem_models(payload)
-        self.assertEqual(items[0]["problem_id"], "abc100_a")
+        self.assertEqual(
+            items[0]["problem_uid"],
+            atcoder_oj.problem_uid(
+                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+            ),
+        )
         self.assertEqual(items[0]["difficulty"], 100)
 
     def test_import_difficulty(self) -> None:
@@ -28,6 +34,8 @@ class DifficultyImportTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -41,23 +49,35 @@ class DifficultyImportTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                         {
-                            "problem_id": "abc100_b",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="B", name=None, problem_id="abc100_b"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "B",
                             "title": "Beta",
                             "point": 200,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_b",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                     ],
@@ -66,9 +86,25 @@ class DifficultyImportTest(unittest.TestCase):
                 conn.commit()
                 self.assertEqual(count, 2)
                 rows = conn.execute(
-                    "SELECT problem_id, difficulty FROM problems ORDER BY problem_id"
+                    "SELECT problem_uid, difficulty FROM problems ORDER BY problem_uid"
                 ).fetchall()
-                self.assertEqual(rows[0], ("abc100_a", 100))
-                self.assertEqual(rows[1], ("abc100_b", 300))
+                self.assertEqual(
+                    rows[0],
+                    (
+                        atcoder_oj.problem_uid(
+                            contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                        ),
+                        100,
+                    ),
+                )
+                self.assertEqual(
+                    rows[1],
+                    (
+                        atcoder_oj.problem_uid(
+                            contest_id="abc100", index="B", name=None, problem_id="abc100_b"
+                        ),
+                        300,
+                    ),
+                )
             finally:
                 conn.close()

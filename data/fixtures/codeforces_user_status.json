@@ -1,0 +1,34 @@
+{
+  "status": "OK",
+  "result": [
+    {
+      "id": 111,
+      "contestId": 1000,
+      "creationTimeSeconds": 100,
+      "verdict": "OK",
+      "programmingLanguage": "GNU C++17",
+      "timeConsumedMillis": 12,
+      "memoryConsumedBytes": 256,
+      "problem": {
+        "contestId": 1000,
+        "index": "A",
+        "name": "Problem A",
+        "tags": ["dp"]
+      }
+    },
+    {
+      "id": 110,
+      "creationTimeSeconds": 90,
+      "verdict": "WRONG_ANSWER",
+      "programmingLanguage": "PyPy",
+      "timeConsumedMillis": 50,
+      "memoryConsumedBytes": 128,
+      "problem": {
+        "index": "B",
+        "name": "Non Contest",
+        "problemsetName": "special",
+        "tags": ["greedy"]
+      }
+    }
+  ]
+}

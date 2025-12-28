@@ -1,0 +1,30 @@
+{
+  "contest_slug": "ahc018",
+  "contest_category": "ahc",
+  "generated_at": "2025-12-28T15:53:57.665723+09:00",
+  "rated_only": true,
+  "participants_used": 901,
+  "rating_summary": {
+    "min": 10.0,
+    "median": 1133.0,
+    "max": 3057.0
+  },
+  "tasks": {
+    "ahc018_a": {
+      "difficulty": 3672,
+      "n": 901,
+      "ac": 842,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "ahc018_b": {
+      "difficulty": 3672,
+      "n": 901,
+      "ac": 719,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

@@ -7,7 +7,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from db.schema import connect
-from db.queries import list_contest_ids
+from db.queries import list_contest_uids
+from oj.atcoder import contest_id_from_uid, atcoder_oj
 
 
 def main() -> int:
@@ -17,12 +18,16 @@ def main() -> int:
 
     conn = connect()
     try:
-        contest_ids = list_contest_ids(conn)
+        contest_uids = list_contest_uids(conn, atcoder_oj.name)
     finally:
         conn.close()
 
     prefix = args.category
-    slugs = [cid for cid in contest_ids if cid.startswith(prefix)]
+    slugs = [
+        contest_id_from_uid(uid)
+        for uid in contest_uids
+        if contest_id_from_uid(uid).startswith(prefix)
+    ]
     print(" ".join(slugs))
     return 0
 

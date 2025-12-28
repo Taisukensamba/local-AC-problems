@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlparse, urlunparse
 
 from crawler.html_table import parse_first_table
 from db.dao import upsert_contests
+from oj.atcoder import atcoder_oj
 
 JST = timezone(timedelta(hours=9))
 
@@ -53,6 +54,8 @@ def parse_archive(html: str, category: str | None = None) -> list[dict]:
         contest_id = contest_url.strip("/").split("/")[-1]
         contests.append(
             {
+                "contest_uid": atcoder_oj.contest_uid(contest_id),
+                "oj": atcoder_oj.name,
                 "contest_id": contest_id,
                 "title": row[1].get("text"),
                 "start_epoch": _parse_start_epoch(row[0].get("text", "")),

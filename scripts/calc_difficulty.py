@@ -105,7 +105,7 @@ def _load_standings(contest_slug: str, contest_category: str) -> dict:
         contest_category,
         base_dir=BASE_DIR,
         cookie_jar_path=BASE_DIR / "cookies.lwp",
-        revel_session=config.cookie.revel_session,
+        revel_session=config.atcoder.cookie.revel_session,
         sleep_sec=SLEEP_SEC,
     )
 

@@ -1,0 +1,46 @@
+{
+  "contest_slug": "abc076",
+  "contest_category": "abc",
+  "generated_at": "2025-12-28T14:52:14.661202+09:00",
+  "rated_only": true,
+  "participants_used": 650,
+  "rating_summary": {
+    "min": 1.0,
+    "median": 585.0,
+    "max": 1197.0
+  },
+  "tasks": {
+    "abc076_a": {
+      "difficulty": -452.0,
+      "n": 650,
+      "ac": 638,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc076_b": {
+      "difficulty": -137.0,
+      "n": 650,
+      "ac": 619,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc076_c": {
+      "difficulty": 846.0,
+      "n": 650,
+      "ac": 346,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc076_d": {
+      "difficulty": 1884.0,
+      "n": 650,
+      "ac": 25,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

@@ -5,10 +5,11 @@ from urllib.error import HTTPError
 
 from config.loader import AppConfig, ConfigError
 from db.dao import ensure_sync_state
-from db.queries import list_contest_ids
+from db.queries import list_contest_uids
 from crawler.cookie_auth import build_cookie_header, require_revel_session
 from crawler.submissions_api import sync_submissions_api
 from crawler.submissions_me import crawl_submissions_me
+from oj.atcoder import atcoder_oj, contest_id_from_uid
 
 
 def run_sync(
@@ -25,10 +26,10 @@ def run_sync(
         "errors": [],
     }
 
-    if config.sync.mode in ("api", "hybrid"):
-        stats["api"] = sync_submissions_api(fetch_json, conn, config.user_id)
+    if config.atcoder.sync.mode in ("api", "hybrid"):
+        stats["api"] = sync_submissions_api(fetch_json, conn, config.atcoder.user_id)
 
-    if config.sync.mode in ("cookie", "hybrid"):
+    if config.atcoder.sync.mode in ("cookie", "hybrid"):
         try:
             revel = require_revel_session(config)
         except ConfigError as exc:
@@ -36,21 +37,22 @@ def run_sync(
         else:
             headers = {"Cookie": build_cookie_header(revel)}
             if contest_ids is None:
-                contest_ids = list_contest_ids(conn)
+                contest_ids = list_contest_uids(conn, atcoder_oj.name)
             total = len(contest_ids)
             done = 0
-            for contest_id in contest_ids:
+            for contest_uid in contest_ids:
+                contest_id = contest_id_from_uid(contest_uid)
                 try:
                     result = crawl_submissions_me(
                         lambda url: fetch_html(url, headers),
                         conn,
                         contest_id,
-                        config.user_id,
+                        config.atcoder.user_id,
                     )
                 except HTTPError as exc:
                     if exc.code == 404:
                         stats["errors"].append(f"skip {contest_id}: 404")
-                        ensure_sync_state(conn, config.user_id, contest_id)
+                        ensure_sync_state(conn, config.atcoder.user_id, atcoder_oj.name, contest_uid)
                         done += 1
                         if on_progress:
                             on_progress(contest_id, done, total)

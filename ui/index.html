@@ -4,20 +4,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ローカル版AtCoder Problems</title>
+  <title>Local CP Problems</title>
   <link rel="stylesheet" href="/ui/styles.css" />
 </head>
 
 <body>
   <main class="page">
     <header class="hero">
-      <h1>ローカル版AtCoder Problems</h1>
+      <h1>Local CP Problems</h1>
       <p class="user" id="user">user: -</p>
       <div class="sync">
         <input id="sync-contests" type="text" placeholder="abc331 arc121 agc060" />
-        <button id="sync-run" type="button">同期する</button>
+        <button id="sync-run" type="button">AtCoder同期</button>
         <div class="sync-full">
-          <button id="sync-all" type="button">全同期</button>
+          <button id="sync-cf" type="button">Codeforces同期</button>
         </div>
         <span id="sync-status" class="sync-status">sync: idle</span>
       </div>
@@ -30,9 +30,22 @@
           <button class="tab-button" data-tab="list">List</button>
         </div>
         <div class="tabs tabs-secondary">
-          <button class="tab-button is-active" data-tab="abc">ABC</button>
-          <button class="tab-button" data-tab="arc">ARC</button>
-          <button class="tab-button" data-tab="agc">AGC</button>
+          <div class="tabs-row">
+            <span class="tabs-label">AtCoder</span>
+            <button class="tab-button is-active" data-tab="abc">ABC</button>
+            <button class="tab-button" data-tab="arc">ARC</button>
+            <button class="tab-button" data-tab="agc">AGC</button>
+          </div>
+          <div class="tabs-row">
+            <span class="tabs-label">Codeforces</span>
+            <button class="tab-button" data-tab="cf-ecr">ECR</button>
+            <button class="tab-button" data-tab="cf-global">Global</button>
+            <button class="tab-button" data-tab="cf-div1+2">Div1+2</button>
+            <button class="tab-button" data-tab="cf-div1">Div1</button>
+            <button class="tab-button" data-tab="cf-div2">Div2</button>
+            <button class="tab-button" data-tab="cf-div3">Div3</button>
+            <button class="tab-button" data-tab="cf-div4">Div4</button>
+          </div>
         </div>
         <div class="toggles">
           <label class="toggle">
@@ -117,6 +130,181 @@
       <div id="agc-sentinel" class="sentinel">loading...</div>
     </section>
 
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="cf-ecr">
+        <div class="results-head">
+          <h2>ECR Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+              <th>G</th>
+              <th>H</th>
+            </tr>
+          </thead>
+          <tbody id="cf-ecr-body"></tbody>
+        </table>
+      </div>
+      <div id="cf-ecr-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="cf-global">
+        <div class="results-head">
+          <h2>Global Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+              <th>G</th>
+              <th>H</th>
+            </tr>
+          </thead>
+          <tbody id="cf-global-body"></tbody>
+        </table>
+      </div>
+      <div id="cf-global-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="cf-div1+2">
+        <div class="results-head">
+          <h2>Div1+2 Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+              <th>G</th>
+              <th>H</th>
+            </tr>
+          </thead>
+          <tbody id="cf-div1+2-body"></tbody>
+        </table>
+      </div>
+      <div id="cf-div1+2-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="cf-div1">
+        <div class="results-head">
+          <h2>Div1 Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+              <th>G</th>
+              <th>H</th>
+            </tr>
+          </thead>
+          <tbody id="cf-div1-body"></tbody>
+        </table>
+      </div>
+      <div id="cf-div1-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="cf-div2">
+        <div class="results-head">
+          <h2>Div2 Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+              <th>G</th>
+              <th>H</th>
+            </tr>
+          </thead>
+          <tbody id="cf-div2-body"></tbody>
+        </table>
+      </div>
+      <div id="cf-div2-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="cf-div3">
+        <div class="results-head">
+          <h2>Div3 Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+              <th>G</th>
+              <th>H</th>
+            </tr>
+          </thead>
+          <tbody id="cf-div3-body"></tbody>
+        </table>
+      </div>
+      <div id="cf-div3-sentinel" class="sentinel">loading...</div>
+    </section>
+
+      <section class="panel table-panel" data-tab-panel="tables" data-table-tab="cf-div4">
+        <div class="results-head">
+          <h2>Div4 Table</h2>
+        </div>
+      <div class="table-wrap">
+        <table class="abc-table">
+          <thead>
+            <tr>
+              <th>Contest</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>E</th>
+              <th>F</th>
+              <th>G</th>
+              <th>H</th>
+            </tr>
+          </thead>
+          <tbody id="cf-div4-body"></tbody>
+        </table>
+      </div>
+      <div id="cf-div4-sentinel" class="sentinel">loading...</div>
+    </section>
+
       <section class="panel dashboard" data-tab-panel="dashboard">
       <div class="results-head">
         <h2>ダッシュボード</h2>
@@ -138,6 +326,33 @@
         <div class="results-head">
           <h2>Problem List</h2>
           <span>difficulty grouped</span>
+        </div>
+        <div class="filters">
+          <label>
+            Query
+            <input id="filter-query" type="text" placeholder="binary search" />
+          </label>
+          <label>
+            OJ
+            <select id="filter-oj">
+              <option value="all">All</option>
+              <option value="atcoder">AtCoder</option>
+              <option value="codeforces">Codeforces</option>
+            </select>
+          </label>
+          <label>
+            Tag
+            <input id="filter-tag" type="text" placeholder="dp" />
+          </label>
+          <label>
+            Min diff
+            <input id="filter-min-diff" type="number" inputmode="numeric" />
+          </label>
+          <label>
+            Max diff
+            <input id="filter-max-diff" type="number" inputmode="numeric" />
+          </label>
+          <button id="filter-apply" type="button">Apply</button>
         </div>
         <div class="list-controls">
           <div class="list-tabs">

@@ -1,0 +1,62 @@
+{
+  "contest_slug": "arc172",
+  "contest_category": "arc",
+  "generated_at": "2025-12-28T15:48:23.828449+09:00",
+  "rated_only": true,
+  "participants_used": 2328,
+  "rating_summary": {
+    "min": 2.0,
+    "median": 1014.0,
+    "max": 2785.0
+  },
+  "tasks": {
+    "arc172_a": {
+      "difficulty": 851,
+      "n": 2328,
+      "ac": 1214,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc172_b": {
+      "difficulty": 1284,
+      "n": 2328,
+      "ac": 950,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc172_c": {
+      "difficulty": 1498,
+      "n": 2328,
+      "ac": 777,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc172_d": {
+      "difficulty": 2936,
+      "n": 2328,
+      "ac": 29,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc172_e": {
+      "difficulty": 2358,
+      "n": 2328,
+      "ac": 178,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc172_f": {
+      "difficulty": 3474,
+      "n": 2328,
+      "ac": 1,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

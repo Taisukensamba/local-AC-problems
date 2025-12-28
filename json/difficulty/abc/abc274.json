@@ -1,0 +1,78 @@
+{
+  "contest_slug": "abc274",
+  "contest_category": "abc",
+  "generated_at": "2025-12-28T15:03:10.191149+09:00",
+  "rated_only": true,
+  "participants_used": 5436,
+  "rating_summary": {
+    "min": 2.0,
+    "median": 556.0,
+    "max": 1998.0
+  },
+  "tasks": {
+    "abc274_a": {
+      "difficulty": -738.0,
+      "n": 5436,
+      "ac": 5202,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc274_b": {
+      "difficulty": -449.0,
+      "n": 5436,
+      "ac": 5057,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc274_c": {
+      "difficulty": 304.0,
+      "n": 5436,
+      "ac": 3902,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc274_d": {
+      "difficulty": 916.0,
+      "n": 5436,
+      "ac": 2077,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc274_e": {
+      "difficulty": 1520.0,
+      "n": 5436,
+      "ac": 706,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc274_f": {
+      "difficulty": 2212.0,
+      "n": 5436,
+      "ac": 92,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc274_g": {
+      "difficulty": 2340.0,
+      "n": 5436,
+      "ac": 57,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc274_h": {
+      "difficulty": 3191.0,
+      "n": 5436,
+      "ac": 1,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

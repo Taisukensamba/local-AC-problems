@@ -5,6 +5,7 @@ import unittest
 from crawler.submissions_api import build_api_url, parse_submissions, sync_submissions_api
 from db.dao import upsert_contests, upsert_problems
 from db.schema import connect, init_db
+from oj.atcoder import atcoder_oj
 
 
 class SubmissionsApiTest(unittest.TestCase):
@@ -30,7 +31,7 @@ class SubmissionsApiTest(unittest.TestCase):
             ]
         )
         items = parse_submissions(payload)
-        self.assertEqual(items[0]["submission_id"], 1)
+        self.assertEqual(items[0]["submission_uid"], atcoder_oj.submission_uid(1))
         self.assertEqual(items[0]["url"], "https://atcoder.jp/contests/abc100/submissions/1")
 
     def test_sync_submissions(self) -> None:
@@ -61,6 +62,8 @@ class SubmissionsApiTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -74,13 +77,19 @@ class SubmissionsApiTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Sample Problem",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": 2,
                         }
                     ],

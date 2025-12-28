@@ -3,16 +3,16 @@ import unittest
 
 from db.dao import ensure_sync_state, upsert_contests, upsert_problems, upsert_submissions
 from db.queries import (
-    list_contests_by_prefix,
+    list_contest_uids_by_prefix,
     list_contests_missing_tasks,
     list_contests_missing_submissions,
-    list_contests_other,
     problems_by_contest,
     progress_summary,
     recent_submissions,
     search_problems,
 )
 from db.schema import connect, init_db
+from oj.atcoder import atcoder_oj
 
 
 class QueriesTest(unittest.TestCase):
@@ -25,6 +25,8 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -38,23 +40,35 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": 200,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": 2,
                         },
                         {
-                            "problem_id": "abc100_b",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="B", name=None, problem_id="abc100_b"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "B",
                             "title": "Beta",
                             "point": 200,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_b",
                             "difficulty": 400,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": 2,
                         },
                     ],
@@ -63,8 +77,11 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "submission_id": 1,
-                            "problem_id": "abc100_a",
+                            "submission_uid": atcoder_oj.submission_uid(1),
+                            "oj": atcoder_oj.name,
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
                             "user_id": "alice",
                             "epoch_second": 100,
                             "result": "AC",
@@ -76,14 +93,28 @@ class QueriesTest(unittest.TestCase):
                     ],
                 )
                 conn.commit()
-                solved = search_problems(conn, "alice", "solved", None, None, None, None, 50, 0)
-                unsolved = search_problems(conn, "alice", "unsolved", None, None, None, None, 50, 0)
+                solved = search_problems(
+                    conn, "alice", "solved", None, None, None, None, "all", None, 50, 0
+                )
+                unsolved = search_problems(
+                    conn, "alice", "unsolved", None, None, None, None, "all", None, 50, 0
+                )
             finally:
                 conn.close()
         self.assertEqual(len(solved), 1)
-        self.assertEqual(solved[0]["problem_id"], "abc100_a")
+        self.assertEqual(
+            solved[0]["problem_uid"],
+            atcoder_oj.problem_uid(
+                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+            ),
+        )
         self.assertEqual(len(unsolved), 1)
-        self.assertEqual(unsolved[0]["problem_id"], "abc100_b")
+        self.assertEqual(
+            unsolved[0]["problem_uid"],
+            atcoder_oj.problem_uid(
+                contest_id="abc100", index="B", name=None, problem_id="abc100_b"
+            ),
+        )
 
     def test_progress_summary(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".db") as f:
@@ -94,6 +125,8 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -107,23 +140,35 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": 300,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": 2,
                         },
                         {
-                            "problem_id": "abc100_b",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="B", name=None, problem_id="abc100_b"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "B",
                             "title": "Beta",
                             "point": 200,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_b",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": 2,
                         },
                     ],
@@ -132,8 +177,11 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "submission_id": 1,
-                            "problem_id": "abc100_a",
+                            "submission_uid": atcoder_oj.submission_uid(1),
+                            "oj": atcoder_oj.name,
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
                             "user_id": "alice",
                             "epoch_second": 100,
                             "result": "AC",
@@ -161,6 +209,8 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -174,13 +224,19 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": 300,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": 2,
                         }
                     ],
@@ -189,8 +245,11 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "submission_id": 1,
-                            "problem_id": "abc100_a",
+                            "submission_uid": atcoder_oj.submission_uid(1),
+                            "oj": atcoder_oj.name,
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
                             "user_id": "alice",
                             "epoch_second": 100,
                             "result": "AC",
@@ -205,7 +264,12 @@ class QueriesTest(unittest.TestCase):
                 items = recent_submissions(conn, "alice", 5)
             finally:
                 conn.close()
-        self.assertEqual(items[0]["problem_id"], "abc100_a")
+        self.assertEqual(
+            items[0]["problem_uid"],
+            atcoder_oj.problem_uid(
+                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+            ),
+        )
 
     def test_contest_prefix_and_problems(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".db") as f:
@@ -216,6 +280,8 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc001"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc001",
                             "title": "ABC 1",
                             "start_epoch": 1,
@@ -224,6 +290,8 @@ class QueriesTest(unittest.TestCase):
                             "category": "abc",
                         },
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc002"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc002",
                             "title": "ABC 2",
                             "start_epoch": 2,
@@ -231,52 +299,57 @@ class QueriesTest(unittest.TestCase):
                             "rated_range": "~1999",
                             "category": "abc",
                         },
-                        {
-                            "contest_id": "other001",
-                            "title": "Other 1",
-                            "start_epoch": 3,
-                            "duration_sec": 600,
-                            "rated_range": "~1999",
-                            "category": "other",
-                        },
                     ],
                 )
                 upsert_problems(
                     conn,
                     [
                         {
-                            "problem_id": "abc001_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc001", index="A", name=None, problem_id="abc001_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc001"),
                             "contest_id": "abc001",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc001/tasks/abc001_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                         {
-                            "problem_id": "abc002_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc002", index="A", name=None, problem_id="abc002_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc002"),
                             "contest_id": "abc002",
                             "task_index": "A",
                             "title": "Beta",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc002/tasks/abc002_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                     ],
                 )
                 conn.commit()
-                contests = list_contests_by_prefix(conn, "abc", 10, 0)
-                grouped = problems_by_contest(conn, "alice", contests)
-                other = list_contests_other(conn, 10, 0)
-                missing = list_contests_missing_tasks(conn, ["abc001", "abc002", "other001"])
+                contest_uids = list_contest_uids_by_prefix(conn, "abc", 10, 0)
+                grouped = problems_by_contest(conn, "alice", contest_uids)
+                missing = list_contests_missing_tasks(
+                    conn,
+                    [atcoder_oj.contest_uid("abc001"), atcoder_oj.contest_uid("abc002")],
+                )
             finally:
                 conn.close()
-        self.assertEqual(contests[0], "abc002")
-        self.assertEqual(grouped["abc001"][0]["task_index"], "A")
-        self.assertEqual(other[0], "other001")
-        self.assertEqual(set(missing), {"other001"})
+        self.assertEqual(contest_uids[0], atcoder_oj.contest_uid("abc002"))
+        self.assertEqual(grouped[atcoder_oj.contest_uid("abc001")][0]["task_index"], "A")
+        self.assertEqual(set(missing), set())
 
     def test_contests_missing_submissions(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".db") as f:
@@ -287,6 +360,8 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc001"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc001",
                             "title": "ABC 1",
                             "start_epoch": 1,
@@ -295,6 +370,8 @@ class QueriesTest(unittest.TestCase):
                             "category": "abc",
                         },
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc002"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc002",
                             "title": "ABC 2",
                             "start_epoch": 2,
@@ -308,23 +385,35 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc001_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc001", index="A", name=None, problem_id="abc001_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc001"),
                             "contest_id": "abc001",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc001/tasks/abc001_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                         {
-                            "problem_id": "abc002_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc002", index="A", name=None, problem_id="abc002_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc002"),
                             "contest_id": "abc002",
                             "task_index": "A",
                             "title": "Beta",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc002/tasks/abc002_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                     ],
@@ -333,8 +422,11 @@ class QueriesTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "submission_id": 1,
-                            "problem_id": "abc001_a",
+                            "submission_uid": atcoder_oj.submission_uid(1),
+                            "oj": atcoder_oj.name,
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc001", index="A", name=None, problem_id="abc001_a"
+                            ),
                             "user_id": "alice",
                             "epoch_second": 100,
                             "result": "AC",
@@ -346,11 +438,21 @@ class QueriesTest(unittest.TestCase):
                     ],
                 )
                 conn.commit()
-                missing = list_contests_missing_submissions(conn, "alice", ["abc001", "abc002"])
-                ensure_sync_state(conn, "alice", "abc002")
+                missing = list_contests_missing_submissions(
+                    conn,
+                    "alice",
+                    [atcoder_oj.contest_uid("abc001"), atcoder_oj.contest_uid("abc002")],
+                )
+                ensure_sync_state(
+                    conn, "alice", atcoder_oj.name, atcoder_oj.contest_uid("abc002")
+                )
                 conn.commit()
-                missing_after = list_contests_missing_submissions(conn, "alice", ["abc001", "abc002"])
+                missing_after = list_contests_missing_submissions(
+                    conn,
+                    "alice",
+                    [atcoder_oj.contest_uid("abc001"), atcoder_oj.contest_uid("abc002")],
+                )
             finally:
                 conn.close()
-        self.assertEqual(missing, ["abc002"])
+        self.assertEqual(missing, [atcoder_oj.contest_uid("abc002")])
         self.assertEqual(missing_after, [])

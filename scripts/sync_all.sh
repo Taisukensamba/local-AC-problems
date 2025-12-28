@@ -12,19 +12,26 @@ post_sync() {
     -d "$payload" >/dev/null
 }
 
+post_sync_cf() {
+  local endpoint=$1
+  curl -s -X POST "$BASE_URL/api/sync/codeforces/${endpoint}" >/dev/null
+}
+
 list_contests_by_prefix() {
   local prefix=$1
   python3 - <<PY
 from db.schema import connect
-from db.queries import list_contest_ids
+from db.queries import list_contest_uids
+from oj.atcoder import contest_id_from_uid, atcoder_oj
 
 conn = connect()
 try:
-    contest_ids = list_contest_ids(conn)
+    contest_uids = list_contest_uids(conn, atcoder_oj.name)
 finally:
     conn.close()
 
-print(" ".join([cid for cid in contest_ids if cid.startswith("${prefix}")]))
+contests = [contest_id_from_uid(uid) for uid in contest_uids]
+print(" ".join([cid for cid in contests if cid.startswith("${prefix}")]))
 PY
 }
 
@@ -117,6 +124,9 @@ if [ "$MODE" = "init" ]; then
     post_sync '{"contest": false, "tasks": false, "submissions": true, "mode": "cookie"}'
   fi
   wait_sync
+  post_sync_cf "problems"
+  post_sync_cf "contests"
+  post_sync_cf "submissions"
 else
   post_sync '{"contest": true, "tasks": false, "submissions": false}'
   wait_sync
@@ -126,4 +136,6 @@ else
   python3 "$SCRIPT_DIR/import_difficulty.py"
   post_sync '{"contest": false, "tasks": false, "submissions": true, "mode": "cookie", "submissions_incremental": true}'
   wait_sync
+  post_sync_cf "problems"
+  post_sync_cf "submissions"
 fi

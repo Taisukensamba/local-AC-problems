@@ -25,6 +25,26 @@ class CookieConfig:
 
 
 @dataclass(frozen=True)
+class AtCoderConfig:
+    user_id: str
+    sync: SyncConfig
+    difficulty: DifficultyConfig
+    cookie: CookieConfig
+
+
+@dataclass(frozen=True)
+class CodeforcesConfig:
+    handle: str
+    include_gym: bool
+
+
+@dataclass(frozen=True)
+class RateLimitConfig:
+    atcoder_rps: float
+    codeforces_min_interval_seconds: float
+
+
+@dataclass(frozen=True)
 class CacheConfig:
     enabled: bool
     ttl_sec: int
@@ -33,11 +53,9 @@ class CacheConfig:
 
 @dataclass(frozen=True)
 class AppConfig:
-    user_id: str
-    sync: SyncConfig
-    rate_limit: float
-    difficulty: DifficultyConfig
-    cookie: CookieConfig
+    atcoder: AtCoderConfig
+    codeforces: CodeforcesConfig
+    rate_limit: RateLimitConfig
     cache: CacheConfig
 
 
@@ -81,27 +99,28 @@ def load_config(path: str | None = None) -> AppConfig:
     except tomllib.TOMLDecodeError as exc:
         raise ConfigError(f"config: invalid toml: {exc}") from exc
 
+    atcoder_raw = _get_required(data, "atcoder")
+    if not isinstance(atcoder_raw, dict):
+        raise ConfigError("config: 'atcoder' must be a table")
+
     user_id_env = os.getenv("AC_USER_ID")
     if user_id_env is not None and user_id_env.strip():
         user_id = _expect_str(user_id_env, "AC_USER_ID")
     else:
-        user_id = _expect_str(_get_required(data, "user_id"), "user_id")
-    rate_limit = _expect_number(_get_required(data, "rate_limit"), "rate_limit")
-    if rate_limit <= 0:
-        raise ConfigError("config: 'rate_limit' must be > 0")
+        user_id = _expect_str(_get_required(atcoder_raw, "user_id"), "atcoder.user_id")
 
-    sync_raw = _get_required(data, "sync")
+    sync_raw = _get_required(atcoder_raw, "sync")
     if not isinstance(sync_raw, dict):
-        raise ConfigError("config: 'sync' must be a table")
-    mode = _expect_str(_get_required(sync_raw, "mode"), "sync.mode")
+        raise ConfigError("config: 'atcoder.sync' must be a table")
+    mode = _expect_str(_get_required(sync_raw, "mode"), "atcoder.sync.mode")
     allowed_modes = {"api", "cookie", "hybrid"}
     if mode not in allowed_modes:
         allowed = ", ".join(sorted(allowed_modes))
-        raise ConfigError(f"config: 'sync.mode' must be one of {allowed}")
+        raise ConfigError(f"config: 'atcoder.sync.mode' must be one of {allowed}")
 
-    difficulty_raw = data.get("difficulty", {})
+    difficulty_raw = atcoder_raw.get("difficulty", {})
     if difficulty_raw and not isinstance(difficulty_raw, dict):
-        raise ConfigError("config: 'difficulty' must be a table")
+        raise ConfigError("config: 'atcoder.difficulty' must be a table")
     source_url_env = os.getenv("AC_DIFFICULTY_SOURCE_URL")
     if source_url_env is not None and source_url_env.strip():
         source_url = _expect_str(source_url_env, "AC_DIFFICULTY_SOURCE_URL")
@@ -111,21 +130,42 @@ def load_config(path: str | None = None) -> AppConfig:
                 "source_url",
                 "https://kenkoooo.com/atcoder/resources/problem-models.json",
             ),
-            "difficulty.source_url",
+            "atcoder.difficulty.source_url",
         )
 
-    cookie_raw = data.get("cookie", {})
+    cookie_raw = atcoder_raw.get("cookie", {})
     if cookie_raw and not isinstance(cookie_raw, dict):
-        raise ConfigError("config: 'cookie' must be a table")
+        raise ConfigError("config: 'atcoder.cookie' must be a table")
     revel_session_env = os.getenv("AC_REVEL_SESSION")
     if revel_session_env is not None and revel_session_env.strip():
         revel_session = _expect_str(revel_session_env, "AC_REVEL_SESSION")
     else:
         revel_session = cookie_raw.get("revel_session")
         if revel_session is not None:
-            revel_session = _expect_str(revel_session, "cookie.revel_session")
-    if not revel_session:
-        raise ConfigError("config: missing 'cookie.revel_session' or AC_REVEL_SESSION")
+            revel_session = _expect_str(revel_session, "atcoder.cookie.revel_session")
+    if mode in ("cookie", "hybrid") and not revel_session:
+        raise ConfigError(
+            "config: missing 'atcoder.cookie.revel_session' or AC_REVEL_SESSION"
+        )
+
+    codeforces_raw = _get_required(data, "codeforces")
+    if not isinstance(codeforces_raw, dict):
+        raise ConfigError("config: 'codeforces' must be a table")
+    handle = _expect_str(_get_required(codeforces_raw, "handle"), "codeforces.handle")
+    include_gym = _expect_bool(codeforces_raw.get("include_gym", False), "codeforces.include_gym")
+
+    rate_limit_raw = data.get("rate_limit", {})
+    if rate_limit_raw and not isinstance(rate_limit_raw, dict):
+        raise ConfigError("config: 'rate_limit' must be a table")
+    atcoder_rps = _expect_number(rate_limit_raw.get("atcoder_rps", 1.0), "rate_limit.atcoder_rps")
+    if atcoder_rps <= 0:
+        raise ConfigError("config: 'rate_limit.atcoder_rps' must be > 0")
+    codeforces_min_interval = _expect_number(
+        rate_limit_raw.get("codeforces_min_interval_seconds", 2.0),
+        "rate_limit.codeforces_min_interval_seconds",
+    )
+    if codeforces_min_interval <= 0:
+        raise ConfigError("config: 'rate_limit.codeforces_min_interval_seconds' must be > 0")
 
     cache_raw = data.get("cache", {})
     if cache_raw and not isinstance(cache_raw, dict):
@@ -138,10 +178,16 @@ def load_config(path: str | None = None) -> AppConfig:
     cache_dir = _expect_str(cache_dir, "cache.dir_path")
 
     return AppConfig(
-        user_id=user_id,
-        sync=SyncConfig(mode=mode),
-        rate_limit=rate_limit,
-        difficulty=DifficultyConfig(source_url=source_url),
-        cookie=CookieConfig(revel_session=revel_session),
+        atcoder=AtCoderConfig(
+            user_id=user_id,
+            sync=SyncConfig(mode=mode),
+            difficulty=DifficultyConfig(source_url=source_url),
+            cookie=CookieConfig(revel_session=revel_session),
+        ),
+        codeforces=CodeforcesConfig(handle=handle, include_gym=include_gym),
+        rate_limit=RateLimitConfig(
+            atcoder_rps=atcoder_rps,
+            codeforces_min_interval_seconds=codeforces_min_interval,
+        ),
         cache=CacheConfig(enabled=cache_enabled, ttl_sec=cache_ttl, dir_path=cache_dir),
     )
