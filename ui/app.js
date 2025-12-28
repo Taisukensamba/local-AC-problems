@@ -237,7 +237,7 @@ async function fetchListPage() {
   const statusParam = listState.status === "all" ? "" : listState.status;
   const baseParams = `limit=${listState.limit}&offset=${listState.offset}`;
   const statusFilter = statusParam ? `&status=${statusParam}` : "";
-  const url = `/api/problems?${baseParams}${statusFilter}&exclude_ahc=true`;
+  const url = `/api/problems?${baseParams}${statusFilter}`;
   const data = await getJSON(url);
   if (!data) {
     if (listStatusEl) listStatusEl.textContent = "load failed";

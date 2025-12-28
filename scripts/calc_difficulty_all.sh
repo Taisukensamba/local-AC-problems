@@ -20,4 +20,3 @@ run_for_category() {
 run_for_category "abc"
 run_for_category "arc"
 run_for_category "agc"
-run_for_category "ahc"

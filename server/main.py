@@ -92,7 +92,6 @@ def get_problems(
     maxDiff: int | None = None,
     query: str | None = None,
     contest: str | None = None,
-    exclude_ahc: bool = False,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> list[dict]:
@@ -106,7 +105,6 @@ def get_problems(
             maxDiff,
             query,
             contest,
-            exclude_ahc,
             limit,
             offset,
         )
@@ -171,14 +169,6 @@ def get_agc_contests(
     return _contests_by_prefix("agc", limit, offset)
 
 
-@app.get("/api/contests/ahc")
-def get_ahc_contests(
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
-) -> list[dict]:
-    return _contests_by_prefix("ahc", limit, offset)
-
-
 def _build_client(config) -> HttpClient:
     return HttpClient(config.rate_limit, cache_config_from_app(config))
 
@@ -186,7 +176,7 @@ def _build_client(config) -> HttpClient:
 def _sync_contests(conn, status: dict, fetch_html: Callable[[str], str]) -> int:
     _set_progress(status, "contest")
     base_url = "https://atcoder.jp/contests/archive?lang=ja"
-    allowed_prefixes = ("abc", "arc", "agc", "ahc")
+    allowed_prefixes = ("abc", "arc", "agc")
     return crawl_archive(
         fetch_html,
         conn,
