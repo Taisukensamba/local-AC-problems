@@ -3,7 +3,7 @@ set -euo pipefail
 
 MODE=${1:-update}
 BASE_URL=${BASE_URL:-http://127.0.0.1:8000}
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 post_sync() {
   local payload=$1
@@ -91,7 +91,7 @@ print("RUNNING=true")
 PY
 )
     running=$(printf "%s" "$output" | tail -n 1 | cut -d= -f2)
-    printf "%s\n" "$output" | head -n -1
+    printf "%s\n" "$output" | sed '$d'
     if [ "$running" = "false" ]; then
       break
     fi
