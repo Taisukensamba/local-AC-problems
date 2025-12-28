@@ -9,10 +9,11 @@ from crawler.html_table import parse_first_table
 from db.dao import (
     ensure_sync_state,
     get_sync_state,
-    list_problem_ids_by_contest,
+    list_problem_uids_by_contest,
     upsert_submissions_with_stats,
     upsert_sync_state,
 )
+from oj.atcoder import atcoder_oj
 
 JST = timezone(timedelta(hours=9))
 
@@ -94,7 +95,14 @@ def parse_submissions_me(html: str, contest_id: str, user_id: str) -> list[dict]
         submissions.append(
             {
                 "submission_id": submission_id,
-                "problem_id": problem_id,
+                "submission_uid": atcoder_oj.submission_uid(submission_id),
+                "oj": atcoder_oj.name,
+                "problem_uid": atcoder_oj.problem_uid(
+                    contest_id=contest_id,
+                    index=None,
+                    name=None,
+                    problem_id=problem_id,
+                ),
                 "user_id": user_id,
                 "epoch_second": _parse_epoch(time_text) or 0,
                 "result": result,
@@ -134,9 +142,15 @@ def crawl_submissions_me(
     contest_id: str,
     user_id: str,
 ) -> dict:
-    state = get_sync_state(conn, user_id, contest_id) or {}
+    contest_uid = atcoder_oj.contest_uid(contest_id)
+    state = get_sync_state(conn, user_id, atcoder_oj.name, contest_uid) or {}
     last_submission_id = state.get("last_submission_id")
-    known_problems = list_problem_ids_by_contest(conn, contest_id)
+    if last_submission_id is not None:
+        try:
+            last_submission_id = int(last_submission_id)
+        except ValueError:
+            last_submission_id = None
+    known_problems = list_problem_uids_by_contest(conn, contest_uid)
     base_url = f"https://atcoder.jp/contests/{contest_id}/submissions/me"
     url = base_url
     all_new = []
@@ -147,7 +161,7 @@ def crawl_submissions_me(
         submissions = parse_submissions_me(html, contest_id, user_id)
         if last_submission_id is not None:
             submissions = [s for s in submissions if s["submission_id"] > last_submission_id]
-        submissions = [s for s in submissions if s["problem_id"] in known_problems]
+        submissions = [s for s in submissions if s["problem_uid"] in known_problems]
         all_new.extend(submissions)
         next_url = find_next_page_url(html, url)
         if not next_url or not submissions or next_url == url:
@@ -161,10 +175,11 @@ def crawl_submissions_me(
         upsert_sync_state(
             conn,
             user_id,
-            contest_id,
-            latest["submission_id"],
+            atcoder_oj.name,
+            contest_uid,
+            str(latest["submission_id"]),
             latest.get("epoch_second"),
         )
     else:
-        ensure_sync_state(conn, user_id, contest_id)
+        ensure_sync_state(conn, user_id, atcoder_oj.name, contest_uid)
     return stats

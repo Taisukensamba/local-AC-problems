@@ -5,6 +5,7 @@ from typing import Callable
 from urllib.parse import urlencode
 
 from db.dao import get_latest_submission_epoch, upsert_submissions_with_stats
+from oj.atcoder import atcoder_oj
 
 SAFETY_MARGIN = 300
 
@@ -18,12 +19,18 @@ def parse_submissions(payload: str) -> list[dict]:
     data = json.loads(payload)
     submissions = []
     for item in data:
+        problem_id = item["problem_id"]
         submissions.append(
             {
-                "submission_id": item["id"],
-                "problem_id": item["problem_id"],
+                "submission_uid": atcoder_oj.submission_uid(item["id"]),
+                "oj": atcoder_oj.name,
+                "problem_uid": atcoder_oj.problem_uid(
+                    contest_id=item.get("contest_id"),
+                    index=item.get("problem_id"),
+                    name=item.get("title"),
+                    problem_id=problem_id,
+                ),
                 "user_id": item["user_id"],
-                "contest_id": item["contest_id"],
                 "epoch_second": item["epoch_second"],
                 "result": item["result"],
                 "language": item["language"],
@@ -40,7 +47,7 @@ def list_updated_contests(
     conn,
     user_id: str,
 ) -> list[str]:
-    last_epoch = get_latest_submission_epoch(conn, user_id) or 0
+    last_epoch = get_latest_submission_epoch(conn, user_id, atcoder_oj.name) or 0
     from_second = max(0, last_epoch - SAFETY_MARGIN)
     url = build_api_url(user_id, from_second)
     payload = fetch_json(url)
@@ -60,7 +67,7 @@ def sync_submissions_api(
     conn,
     user_id: str,
 ) -> dict:
-    last_epoch = get_latest_submission_epoch(conn, user_id) or 0
+    last_epoch = get_latest_submission_epoch(conn, user_id, atcoder_oj.name) or 0
     from_second = max(0, last_epoch - SAFETY_MARGIN)
     url = build_api_url(user_id, from_second)
     payload = fetch_json(url)

@@ -11,21 +11,30 @@ from fastapi.staticfiles import StaticFiles
 
 from config.loader import ConfigError, load_config
 from crawler.archive import crawl_archive
+from crawler.codeforces_api import (
+    sync_contests as sync_codeforces_contests,
+    sync_problemset as sync_codeforces_problemset,
+    sync_user_status as sync_codeforces_user_status,
+)
 from crawler.http import HttpClient, cache_config_from_app
 from crawler.sync import run_sync
-from db.queries import list_contest_ids
 from crawler.tasks import crawl_tasks
 from db.queries import (
-    list_contest_ids,
-    list_contests_by_prefix,
+    list_contest_uids,
+    list_contest_uids_by_category,
+    list_contest_uids_by_prefix,
     list_contests_missing_submissions,
     list_contests_missing_tasks,
+    get_contest_titles,
     problems_by_contest,
     progress_summary,
     recent_submissions,
     search_problems,
 )
 from db.schema import connect, init_db
+from db.dao import get_sync_state
+from oj.atcoder import atcoder_oj
+from oj.codeforces import codeforces_oj
 
 app = FastAPI()
 UI_DIR = Path(__file__).resolve().parent.parent / "ui"
@@ -92,10 +101,12 @@ def get_problems(
     maxDiff: int | None = None,
     query: str | None = None,
     contest: str | None = None,
+    oj: str | None = Query(default="all"),
+    tag: str | None = None,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> list[dict]:
-    user_id = app.state.config.user_id
+    user_id = app.state.config.atcoder.user_id
     return _with_conn(
         lambda conn: search_problems(
             conn,
@@ -105,6 +116,8 @@ def get_problems(
             maxDiff,
             query,
             contest,
+            oj,
+            tag,
             limit,
             offset,
         )
@@ -113,36 +126,61 @@ def get_problems(
 
 @app.get("/api/progress/summary")
 def get_progress_summary() -> list[dict]:
-    return _with_conn(lambda conn: progress_summary(conn, app.state.config.user_id))
+    return _with_conn(lambda conn: progress_summary(conn, app.state.config.atcoder.user_id))
 
 
 @app.get("/api/progress/recent")
 def get_progress_recent(limit: int = Query(default=10, ge=1, le=50)) -> list[dict]:
-    return _with_conn(lambda conn: recent_submissions(conn, app.state.config.user_id, limit))
+    return _with_conn(
+        lambda conn: recent_submissions(conn, app.state.config.atcoder.user_id, limit)
+    )
 
 
 @app.get("/api/me")
 def get_me() -> dict:
-    return {"user_id": app.state.config.user_id}
+    return {
+        "atcoder_user_id": app.state.config.atcoder.user_id,
+        "codeforces_handle": app.state.config.codeforces.handle,
+    }
 
 
-def _contests_with_problems(contest_ids: list[str]) -> list[dict]:
-    def load(conn) -> dict[str, list[dict]]:
-        return problems_by_contest(conn, app.state.config.user_id, contest_ids)
+def _contest_id_from_uid(contest_uid: str) -> str:
+    if ":" in contest_uid:
+        return contest_uid.split(":", 1)[1]
+    return contest_uid
 
-    grouped = _with_conn(load)
+
+def _contests_with_problems(contest_uids: list[str]) -> list[dict]:
+    def load(conn) -> tuple[dict[str, list[dict]], dict[str, str]]:
+        return (
+            problems_by_contest(conn, app.state.config.atcoder.user_id, contest_uids),
+            get_contest_titles(conn, contest_uids),
+        )
+
+    grouped, titles = _with_conn(load)
     return [
         {
-            "contest_id": contest_id,
-            "problems": grouped.get(contest_id, []),
+            "contest_uid": contest_uid,
+            "contest_id": _contest_id_from_uid(contest_uid),
+            "contest_title": titles.get(contest_uid),
+            "problems": grouped.get(contest_uid, []),
         }
-        for contest_id in contest_ids
+        for contest_uid in contest_uids
     ]
 
 
 def _contests_by_prefix(prefix: str, limit: int, offset: int) -> list[dict]:
-    contest_ids = _with_conn(lambda conn: list_contests_by_prefix(conn, prefix, limit, offset))
-    return _contests_with_problems(contest_ids)
+    contest_uids = _with_conn(
+        lambda conn: list_contest_uids_by_prefix(conn, prefix, limit, offset)
+    )
+    return _contests_with_problems(contest_uids)
+
+
+def _contests_by_category(oj: str, category: str, limit: int, offset: int) -> list[dict]:
+    contest_uids = _with_conn(
+        lambda conn: list_contest_uids_by_category(conn, oj, category, limit, offset)
+    )
+    return _contests_with_problems(contest_uids)
 
 
 @app.get("/api/contests/abc")
@@ -169,8 +207,69 @@ def get_agc_contests(
     return _contests_by_prefix("agc", limit, offset)
 
 
+@app.get("/api/contests/cf-ecr")
+def get_cf_ecr_contests(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> list[dict]:
+    return _contests_by_category(codeforces_oj.name, "cf-ecr", limit, offset)
+
+
+@app.get("/api/contests/cf-global")
+def get_cf_global_contests(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> list[dict]:
+    return _contests_by_category(codeforces_oj.name, "cf-global", limit, offset)
+
+
+@app.get("/api/contests/cf-div1+2")
+def get_cf_div1_2_contests(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> list[dict]:
+    return _contests_by_category(codeforces_oj.name, "cf-div1+2", limit, offset)
+
+
+@app.get("/api/contests/cf-div1")
+def get_cf_div1_contests(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> list[dict]:
+    return _contests_by_category(codeforces_oj.name, "cf-div1", limit, offset)
+
+
+@app.get("/api/contests/cf-div2")
+def get_cf_div2_contests(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> list[dict]:
+    return _contests_by_category(codeforces_oj.name, "cf-div2", limit, offset)
+
+
+@app.get("/api/contests/cf-div3")
+def get_cf_div3_contests(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> list[dict]:
+    return _contests_by_category(codeforces_oj.name, "cf-div3", limit, offset)
+
+
+@app.get("/api/contests/cf-div4")
+def get_cf_div4_contests(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> list[dict]:
+    return _contests_by_category(codeforces_oj.name, "cf-div4", limit, offset)
+
+
 def _build_client(config) -> HttpClient:
-    return HttpClient(config.rate_limit, cache_config_from_app(config))
+    return HttpClient(config.rate_limit.atcoder_rps, cache_config_from_app(config))
+
+
+def _build_codeforces_client(config) -> HttpClient:
+    rps = 1.0 / config.rate_limit.codeforces_min_interval_seconds
+    return HttpClient(rps, cache_config_from_app(config))
 
 
 def _sync_contests(conn, status: dict, fetch_html: Callable[[str], str]) -> int:
@@ -186,14 +285,19 @@ def _sync_contests(conn, status: dict, fetch_html: Callable[[str], str]) -> int:
 
 
 def _sync_tasks(conn, status: dict, fetch_html: Callable[[str], str], payload: dict) -> dict:
-    contest_ids = payload.get("contest_ids") or list_contest_ids(conn)
+    contest_ids = payload.get("contest_ids")
+    if contest_ids:
+        contest_uids = [atcoder_oj.contest_uid(cid) for cid in contest_ids]
+    else:
+        contest_uids = list_contest_uids(conn, atcoder_oj.name)
     if payload.get("tasks_incremental"):
-        contest_ids = list_contests_missing_tasks(conn, contest_ids)
-    _set_progress(status, "tasks", total=len(contest_ids))
+        contest_uids = list_contests_missing_tasks(conn, contest_uids)
+    _set_progress(status, "tasks", total=len(contest_uids))
 
     total = 0
     skipped = []
-    for contest_id in contest_ids:
+    for contest_uid in contest_uids:
+        contest_id = contest_id_from_uid(contest_uid)
         status["progress"]["current"] = contest_id
         try:
             total += crawl_tasks(fetch_html, conn, contest_id)
@@ -222,9 +326,11 @@ def _sync_submissions(
     contest_ids = payload.get("contest_ids")
     if payload.get("submissions_incremental"):
         if contest_ids is None:
-            contest_ids = list_contest_ids(conn)
+            contest_ids = list_contest_uids(conn, atcoder_oj.name)
     if contest_ids is None:
-        contest_ids = list_contest_ids(conn)
+        contest_ids = list_contest_uids(conn, atcoder_oj.name)
+    else:
+        contest_ids = [atcoder_oj.contest_uid(cid) for cid in contest_ids]
 
     _set_progress(status, "submissions", total=len(contest_ids))
 
@@ -260,7 +366,12 @@ def start_sync(payload: dict, background_tasks: BackgroundTasks) -> dict:
             config = app.state.config
             mode = payload.get("mode")
             if mode:
-                config = replace(config, sync=replace(config.sync, mode=mode))
+                config = replace(
+                    config,
+                    atcoder=replace(
+                        config.atcoder, sync=replace(config.atcoder.sync, mode=mode)
+                    ),
+                )
 
             client = _build_client(config)
             fetch_json = client.get_text
@@ -284,6 +395,73 @@ def start_sync(payload: dict, background_tasks: BackgroundTasks) -> dict:
             conn.close()
             status["finished_at"] = datetime.now(timezone.utc).isoformat()
             status["running"] = False
+
+    background_tasks.add_task(run_task)
+    return {"status": "started"}
+
+
+@app.post("/api/sync/codeforces/problems")
+def start_sync_codeforces_problems(background_tasks: BackgroundTasks) -> dict:
+    def run_task() -> None:
+        conn = connect()
+        try:
+            client = _build_codeforces_client(app.state.config)
+            result = sync_codeforces_problemset(client.get_text, conn)
+            conn.commit()
+            app.state.sync_status["last_result"] = {"codeforces_problems": result}
+        finally:
+            conn.close()
+
+    background_tasks.add_task(run_task)
+    return {"status": "started"}
+
+
+@app.post("/api/sync/codeforces/contests")
+def start_sync_codeforces_contests(background_tasks: BackgroundTasks) -> dict:
+    def run_task() -> None:
+        conn = connect()
+        try:
+            client = _build_codeforces_client(app.state.config)
+            result = sync_codeforces_contests(
+                client.get_text, conn, app.state.config.codeforces.include_gym
+            )
+            conn.commit()
+            app.state.sync_status["last_result"] = {"codeforces_contests": result}
+        finally:
+            conn.close()
+
+    background_tasks.add_task(run_task)
+    return {"status": "started"}
+
+
+@app.post("/api/sync/codeforces/submissions")
+def start_sync_codeforces_submissions(background_tasks: BackgroundTasks) -> dict:
+    def run_task() -> None:
+        conn = connect()
+        try:
+            client = _build_codeforces_client(app.state.config)
+            state = get_sync_state(
+                conn,
+                app.state.config.codeforces.handle,
+                codeforces_oj.name,
+                "global",
+            )
+            last_seen = None
+            if state and state.get("last_submission_id"):
+                try:
+                    last_seen = int(state["last_submission_id"])
+                except ValueError:
+                    last_seen = None
+            result = sync_codeforces_user_status(
+                client.get_text,
+                conn,
+                app.state.config.codeforces.handle,
+                last_seen,
+            )
+            conn.commit()
+            app.state.sync_status["last_result"] = {"codeforces_submissions": result}
+        finally:
+            conn.close()
 
     background_tasks.add_task(run_task)
     return {"status": "started"}

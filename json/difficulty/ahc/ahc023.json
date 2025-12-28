@@ -1,0 +1,30 @@
+{
+  "contest_slug": "ahc023",
+  "contest_category": "ahc",
+  "generated_at": "2025-12-28T15:54:13.659173+09:00",
+  "rated_only": true,
+  "participants_used": 737,
+  "rating_summary": {
+    "min": 11.0,
+    "median": 1233.0,
+    "max": 3064.0
+  },
+  "tasks": {
+    "asprocon10_a": {
+      "difficulty": 3667,
+      "n": 737,
+      "ac": 710,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "asprocon10_b": {
+      "difficulty": 3667,
+      "n": 737,
+      "ac": 623,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

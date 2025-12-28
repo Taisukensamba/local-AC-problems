@@ -1,0 +1,46 @@
+{
+  "contest_slug": "abc119",
+  "contest_category": "abc",
+  "generated_at": "2025-12-28T14:54:00.641912+09:00",
+  "rated_only": true,
+  "participants_used": 1828,
+  "rating_summary": {
+    "min": 1.0,
+    "median": 420.5,
+    "max": 1199.0
+  },
+  "tasks": {
+    "abc119_a": {
+      "difficulty": -417.0,
+      "n": 1828,
+      "ac": 1770,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc119_b": {
+      "difficulty": -292.0,
+      "n": 1828,
+      "ac": 1744,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc119_c": {
+      "difficulty": 1346.0,
+      "n": 1828,
+      "ac": 196,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "abc119_d": {
+      "difficulty": 1346.0,
+      "n": 1828,
+      "ac": 189,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

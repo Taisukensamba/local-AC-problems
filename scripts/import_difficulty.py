@@ -14,8 +14,10 @@ def main() -> None:
     init_db()
     conn = connect()
     try:
-        client = HttpClient(config.rate_limit, cache_config_from_app(config))
-        count = import_difficulty(client.get_text, conn, config.difficulty.source_url)
+        client = HttpClient(config.rate_limit.atcoder_rps, cache_config_from_app(config))
+        count = import_difficulty(
+            client.get_text, conn, config.atcoder.difficulty.source_url
+        )
         conn.commit()
     finally:
         conn.close()

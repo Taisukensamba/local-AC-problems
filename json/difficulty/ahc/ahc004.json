@@ -1,0 +1,20 @@
+{
+  "contest_slug": "ahc004",
+  "contest_category": "ahc",
+  "generated_at": "2025-12-28T15:53:21.188752+09:00",
+  "rated_only": true,
+  "participants_used": 508,
+  "rating_summary": {
+    "min": 22.0,
+    "median": 881.5,
+    "max": 2512.0
+  },
+  "tasks": {
+    "ahc004_a": {
+      "difficulty": -366,
+      "n": 508,
+      "ac": 503,
+      "flags": []
+    }
+  }
+}

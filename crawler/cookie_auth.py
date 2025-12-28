@@ -4,9 +4,9 @@ from config.loader import AppConfig, ConfigError
 
 
 def require_revel_session(config: AppConfig) -> str:
-    revel_session = config.cookie.revel_session
+    revel_session = config.atcoder.cookie.revel_session
     if not revel_session:
-        raise ConfigError("login required: set cookie.revel_session in config")
+        raise ConfigError("login required: set atcoder.cookie.revel_session in config")
     return revel_session
 
 

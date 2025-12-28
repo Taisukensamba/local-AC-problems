@@ -1,0 +1,22 @@
+{
+  "contest_slug": "ahc039",
+  "contest_category": "ahc",
+  "generated_at": "2025-12-28T15:54:58.096772+09:00",
+  "rated_only": true,
+  "participants_used": 621,
+  "rating_summary": {
+    "min": 15.0,
+    "median": 1435.0,
+    "max": 3352.0
+  },
+  "tasks": {
+    "ahc039_a": {
+      "difficulty": 3744,
+      "n": 621,
+      "ac": 571,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

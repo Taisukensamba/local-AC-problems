@@ -4,10 +4,20 @@ import tempfile
 import unittest
 from urllib.error import HTTPError
 
-from config.loader import AppConfig, CacheConfig, CookieConfig, DifficultyConfig, SyncConfig
+from config.loader import (
+    AppConfig,
+    AtCoderConfig,
+    CacheConfig,
+    CodeforcesConfig,
+    CookieConfig,
+    DifficultyConfig,
+    RateLimitConfig,
+    SyncConfig,
+)
 from crawler.sync import run_sync
 from db.dao import upsert_contests, upsert_problems
 from db.schema import connect, init_db
+from oj.atcoder import atcoder_oj
 
 
 class SyncTest(unittest.TestCase):
@@ -43,11 +53,14 @@ class SyncTest(unittest.TestCase):
             return pages[url]
 
         config = AppConfig(
-            user_id="alice",
-            sync=SyncConfig(mode="hybrid"),
-            rate_limit=1.0,
-            difficulty=DifficultyConfig(source_url="https://example.com"),
-            cookie=CookieConfig(revel_session="abc"),
+            atcoder=AtCoderConfig(
+                user_id="alice",
+                sync=SyncConfig(mode="hybrid"),
+                difficulty=DifficultyConfig(source_url="https://example.com"),
+                cookie=CookieConfig(revel_session="abc"),
+            ),
+            codeforces=CodeforcesConfig(handle="alice_cf", include_gym=False),
+            rate_limit=RateLimitConfig(atcoder_rps=1.0, codeforces_min_interval_seconds=2.0),
             cache=CacheConfig(enabled=True, ttl_sec=3600, dir_path="data/cache"),
         )
 
@@ -59,6 +72,8 @@ class SyncTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -72,28 +87,46 @@ class SyncTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                         {
-                            "problem_id": "abc100_b",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="B", name=None, problem_id="abc100_b"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "B",
                             "title": "Beta",
                             "point": 200,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_b",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                     ],
                 )
-                stats = run_sync(config, conn, fetch_json, fetch_html, ["abc100"])
+                stats = run_sync(
+                    config,
+                    conn,
+                    fetch_json,
+                    fetch_html,
+                    [atcoder_oj.contest_uid("abc100")],
+                )
                 conn.commit()
                 self.assertEqual(stats["api"]["inserted"], 1)
                 self.assertEqual(stats["cookie"]["inserted"], 3)
@@ -111,11 +144,14 @@ class SyncTest(unittest.TestCase):
             return html
 
         config = AppConfig(
-            user_id="alice",
-            sync=SyncConfig(mode="cookie"),
-            rate_limit=1.0,
-            difficulty=DifficultyConfig(source_url="https://example.com"),
-            cookie=CookieConfig(revel_session="abc"),
+            atcoder=AtCoderConfig(
+                user_id="alice",
+                sync=SyncConfig(mode="cookie"),
+                difficulty=DifficultyConfig(source_url="https://example.com"),
+                cookie=CookieConfig(revel_session="abc"),
+            ),
+            codeforces=CodeforcesConfig(handle="alice_cf", include_gym=False),
+            rate_limit=RateLimitConfig(atcoder_rps=1.0, codeforces_min_interval_seconds=2.0),
             cache=CacheConfig(enabled=True, ttl_sec=3600, dir_path="data/cache"),
         )
 
@@ -127,6 +163,8 @@ class SyncTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -140,13 +178,19 @@ class SyncTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         }
                     ],
@@ -155,13 +199,19 @@ class SyncTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_b",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="B", name=None, problem_id="abc100_b"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "B",
                             "title": "Beta",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_b",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         }
                     ],
@@ -180,11 +230,14 @@ class SyncTest(unittest.TestCase):
             raise HTTPError(_url, 404, "Not Found", None, None)
 
         config = AppConfig(
-            user_id="alice",
-            sync=SyncConfig(mode="cookie"),
-            rate_limit=1.0,
-            difficulty=DifficultyConfig(source_url="https://example.com"),
-            cookie=CookieConfig(revel_session="abc"),
+            atcoder=AtCoderConfig(
+                user_id="alice",
+                sync=SyncConfig(mode="cookie"),
+                difficulty=DifficultyConfig(source_url="https://example.com"),
+                cookie=CookieConfig(revel_session="abc"),
+            ),
+            codeforces=CodeforcesConfig(handle="alice_cf", include_gym=False),
+            rate_limit=RateLimitConfig(atcoder_rps=1.0, codeforces_min_interval_seconds=2.0),
             cache=CacheConfig(enabled=True, ttl_sec=3600, dir_path="data/cache"),
         )
 
@@ -196,6 +249,8 @@ class SyncTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,

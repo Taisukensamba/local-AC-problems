@@ -11,6 +11,8 @@ def search_problems(
     max_diff: int | None,
     query: str | None,
     contest: str | None,
+    oj: str | None,
+    tag: str | None,
     limit: int,
     offset: int,
 ) -> list[dict]:
@@ -29,12 +31,19 @@ def search_problems(
         conditions.append("p.difficulty <= ?")
         params.append(max_diff)
     if query:
-        conditions.append("(p.title LIKE ? OR p.problem_id LIKE ?)")
+        conditions.append("(p.title LIKE ? OR p.problem_uid LIKE ?)")
         params.extend([f"%{query}%", f"%{query}%"])
     if contest:
         conditions.append("p.contest_id = ?")
         params.append(contest)
-    conditions.append("p.contest_id NOT GLOB 'ahc[0-9]*'")
+    if oj and oj != "all":
+        conditions.append("p.oj = ?")
+        params.append(oj)
+    if tag:
+        conditions.append(
+            "EXISTS (SELECT 1 FROM problem_tags pt WHERE pt.problem_uid = p.problem_uid AND pt.tag = ?)"
+        )
+        params.append(tag)
 
     where = ""
     if conditions:
@@ -42,13 +51,16 @@ def search_problems(
 
     sql = (
         "SELECT "
-        "p.problem_id, p.contest_id, p.task_index, p.title, p.point, p.url, p.difficulty, "
+        "p.problem_uid, p.oj, p.contest_id, p.task_index, p.title, p.point, p.url, p.difficulty, "
         "COALESCE(pr.is_ac, 0) AS is_ac, "
-        "pr.first_ac_epoch, pr.last_submit_epoch, pr.ac_count, pr.wa_count "
+        "pr.first_ac_epoch, pr.last_submit_epoch, pr.ac_count, pr.wa_count, "
+        "GROUP_CONCAT(pt.tag) "
         "FROM problems p "
-        "LEFT JOIN progress pr ON pr.problem_id = p.problem_id AND pr.user_id = ? "
+        "LEFT JOIN progress pr ON pr.problem_uid = p.problem_uid AND pr.user_id = ? "
+        "LEFT JOIN problem_tags pt ON pt.problem_uid = p.problem_uid "
         f"{where} "
-        "ORDER BY p.contest_id, p.task_index "
+        "GROUP BY p.problem_uid, pr.user_id "
+        "ORDER BY p.oj, p.contest_id, p.task_index "
         "LIMIT ? OFFSET ?"
     )
     params.extend([limit, offset])
@@ -57,20 +69,23 @@ def search_problems(
     rows = cursor.fetchall()
     results = []
     for row in rows:
+        tags = row[13].split(",") if row[13] else []
         results.append(
             {
-                "problem_id": row[0],
-                "contest_id": row[1],
-                "task_index": row[2],
-                "title": row[3],
-                "point": row[4],
-                "url": row[5],
-                "difficulty": row[6],
-                "is_ac": bool(row[7]),
-                "first_ac_epoch": row[8],
-                "last_submit_epoch": row[9],
-                "ac_count": row[10] or 0,
-                "wa_count": row[11] or 0,
+                "problem_uid": row[0],
+                "oj": row[1],
+                "contest_id": row[2],
+                "task_index": row[3],
+                "title": row[4],
+                "point": row[5],
+                "url": row[6],
+                "difficulty": row[7],
+                "is_ac": bool(row[8]),
+                "first_ac_epoch": row[9],
+                "last_submit_epoch": row[10],
+                "ac_count": row[11] or 0,
+                "wa_count": row[12] or 0,
+                "tags": tags,
             }
         )
     return results
@@ -111,8 +126,7 @@ def progress_summary(conn: sqlite3.Connection, user_id: str) -> list[dict]:
         "SUM(CASE WHEN COALESCE(pr.is_ac, 0) = 1 THEN 1 ELSE 0 END) AS ac_count, "
         "COUNT(*) AS total_count "
         "FROM problems p "
-        "LEFT JOIN progress pr ON pr.problem_id = p.problem_id AND pr.user_id = ? "
-        "WHERE p.contest_id NOT GLOB 'ahc[0-9]*' "
+        "LEFT JOIN progress pr ON pr.problem_uid = p.problem_uid AND pr.user_id = ? "
         "GROUP BY bin"
     )
     rows = conn.execute(sql, (user_id,)).fetchall()
@@ -128,11 +142,11 @@ def progress_summary(conn: sqlite3.Connection, user_id: str) -> list[dict]:
 
 def recent_submissions(conn: sqlite3.Connection, user_id: str, limit: int) -> list[dict]:
     sql = (
-        "SELECT s.submission_id, s.problem_id, s.epoch_second, s.result, s.language, s.url, "
-        "p.title, p.contest_id "
+        "SELECT s.submission_uid, s.problem_uid, s.epoch_second, s.result, s.language, s.url, "
+        "p.title, p.contest_id, p.oj "
         "FROM submissions s "
-        "LEFT JOIN problems p ON p.problem_id = s.problem_id "
-        "WHERE s.user_id = ? AND (p.contest_id IS NULL OR p.contest_id NOT GLOB 'ahc[0-9]*') "
+        "LEFT JOIN problems p ON p.problem_uid = s.problem_uid "
+        "WHERE s.user_id = ? "
         "ORDER BY s.epoch_second DESC "
         "LIMIT ?"
     )
@@ -141,32 +155,38 @@ def recent_submissions(conn: sqlite3.Connection, user_id: str, limit: int) -> li
     for row in rows:
         results.append(
             {
-                "submission_id": row[0],
-                "problem_id": row[1],
+                "submission_uid": row[0],
+                "problem_uid": row[1],
                 "epoch_second": row[2],
                 "result": row[3],
                 "language": row[4],
                 "url": row[5],
                 "title": row[6],
                 "contest_id": row[7],
+                "oj": row[8],
             }
         )
     return results
 
 
-def list_contest_ids(conn: sqlite3.Connection) -> list[str]:
-    rows = conn.execute("SELECT contest_id FROM contests ORDER BY contest_id").fetchall()
+def list_contest_uids(conn: sqlite3.Connection, oj: str | None = None) -> list[str]:
+    if oj:
+        rows = conn.execute(
+            "SELECT contest_uid FROM contests WHERE oj = ? ORDER BY contest_id", (oj,)
+        ).fetchall()
+    else:
+        rows = conn.execute("SELECT contest_uid FROM contests ORDER BY contest_id").fetchall()
     return [row[0] for row in rows]
 
 
-def list_contests_by_prefix(
+def list_contest_uids_by_prefix(
     conn: sqlite3.Connection, prefix: str, limit: int, offset: int
 ) -> list[str]:
     glob = f"{prefix}[0-9]*"
     start = len(prefix) + 1
     rows = conn.execute(
-        "SELECT contest_id FROM contests "
-        "WHERE contest_id GLOB ? "
+        "SELECT contest_uid FROM contests "
+        "WHERE oj = 'atcoder' AND contest_id GLOB ? "
         "ORDER BY CAST(SUBSTR(contest_id, ?) AS INTEGER) DESC "
         "LIMIT ? OFFSET ?",
         (glob, start, limit, offset),
@@ -174,100 +194,112 @@ def list_contests_by_prefix(
     return [row[0] for row in rows]
 
 
-def list_contests_other(conn: sqlite3.Connection, limit: int, offset: int) -> list[str]:
+def list_contest_uids_by_category(
+    conn: sqlite3.Connection, oj: str, category: str, limit: int, offset: int
+) -> list[str]:
     rows = conn.execute(
-        "SELECT contest_id FROM contests "
-        "WHERE contest_id NOT GLOB 'abc[0-9]*' "
-        "AND contest_id NOT GLOB 'arc[0-9]*' "
-        "AND contest_id NOT GLOB 'agc[0-9]*' "
-        "AND contest_id NOT GLOB 'ahc[0-9]*' "
+        "SELECT contest_uid FROM contests "
+        "WHERE oj = ? AND category = ? "
         "ORDER BY start_epoch DESC, contest_id DESC "
         "LIMIT ? OFFSET ?",
-        (limit, offset),
+        (oj, category, limit, offset),
     ).fetchall()
     return [row[0] for row in rows]
 
 
-def problems_by_contest(
-    conn: sqlite3.Connection, user_id: str, contest_ids: list[str]
-) -> dict[str, list[dict]]:
-    if not contest_ids:
+def get_contest_titles(conn: sqlite3.Connection, contest_uids: list[str]) -> dict[str, str]:
+    if not contest_uids:
         return {}
-    placeholders = ",".join(["?"] * len(contest_ids))
+    placeholders = ",".join(["?"] * len(contest_uids))
+    rows = conn.execute(
+        f"SELECT contest_uid, title FROM contests WHERE contest_uid IN ({placeholders})",
+        contest_uids,
+    ).fetchall()
+    return {row[0]: row[1] for row in rows}
+
+def problems_by_contest(
+    conn: sqlite3.Connection, user_id: str, contest_uids: list[str]
+) -> dict[str, list[dict]]:
+    if not contest_uids:
+        return {}
+    placeholders = ",".join(["?"] * len(contest_uids))
     sql = (
-        "SELECT p.contest_id, p.task_index, p.title, p.url, p.difficulty, COALESCE(pr.is_ac, 0), "
+        "SELECT p.contest_uid, p.oj, p.contest_id, p.task_index, p.title, p.url, p.difficulty, "
+        "COALESCE(pr.is_ac, 0), "
         "EXISTS ("
         "SELECT 1 FROM submissions s "
-        "JOIN contests c ON c.contest_id = p.contest_id "
-        "WHERE s.problem_id = p.problem_id AND s.user_id = ? "
-        "AND s.result = 'AC' "
+        "JOIN contests c ON c.contest_uid = p.contest_uid "
+        "WHERE s.problem_uid = p.problem_uid AND s.user_id = ? "
+        "AND s.result IN ('AC', 'OK') "
         "AND c.start_epoch IS NOT NULL AND c.duration_sec IS NOT NULL "
         "AND s.epoch_second BETWEEN c.start_epoch AND c.start_epoch + c.duration_sec"
         "), "
         "EXISTS ("
         "SELECT 1 FROM submissions s "
-        "JOIN contests c ON c.contest_id = p.contest_id "
-        "WHERE s.problem_id = p.problem_id AND s.user_id = ? "
+        "JOIN contests c ON c.contest_uid = p.contest_uid "
+        "WHERE s.problem_uid = p.problem_uid AND s.user_id = ? "
         "AND c.start_epoch IS NOT NULL AND c.duration_sec IS NOT NULL "
         "AND s.epoch_second BETWEEN c.start_epoch AND c.start_epoch + c.duration_sec"
         "), "
         "EXISTS ("
         "SELECT 1 FROM submissions s "
-        "WHERE s.problem_id = p.problem_id AND s.user_id = ? "
-        "AND s.result != 'AC'"
+        "WHERE s.problem_uid = p.problem_uid AND s.user_id = ? "
+        "AND s.result NOT IN ('AC', 'OK')"
         ") "
         "FROM problems p "
-        "LEFT JOIN progress pr ON pr.problem_id = p.problem_id AND pr.user_id = ? "
-        f"WHERE p.contest_id IN ({placeholders}) "
+        "LEFT JOIN progress pr ON pr.problem_uid = p.problem_uid AND pr.user_id = ? "
+        f"WHERE p.contest_uid IN ({placeholders}) "
         "ORDER BY p.contest_id, p.task_index"
     )
-    rows = conn.execute(sql, [user_id, user_id, user_id, user_id, *contest_ids]).fetchall()
+    rows = conn.execute(sql, [user_id, user_id, user_id, user_id, *contest_uids]).fetchall()
     grouped: dict[str, list[dict]] = {}
     for row in rows:
         grouped.setdefault(row[0], []).append(
             {
-                "task_index": row[1],
-                "title": row[2],
-                "url": row[3],
-                "difficulty": row[4],
-                "is_ac": bool(row[5]),
-                "contest_ac": bool(row[6]),
-                "contest_submitted": bool(row[7]),
-                "non_contest_wa": bool(row[8]),
+                "oj": row[1],
+                "contest_id": row[2],
+                "task_index": row[3],
+                "title": row[4],
+                "url": row[5],
+                "difficulty": row[6],
+                "is_ac": bool(row[7]),
+                "contest_ac": bool(row[8]),
+                "contest_submitted": bool(row[9]),
+                "non_contest_wa": bool(row[10]),
             }
         )
     return grouped
 
 
-def list_contests_missing_tasks(conn: sqlite3.Connection, contest_ids: list[str]) -> list[str]:
-    if not contest_ids:
+def list_contests_missing_tasks(conn: sqlite3.Connection, contest_uids: list[str]) -> list[str]:
+    if not contest_uids:
         return []
-    placeholders = ",".join(["?"] * len(contest_ids))
+    placeholders = ",".join(["?"] * len(contest_uids))
     rows = conn.execute(
-        "SELECT c.contest_id FROM contests c "
-        "LEFT JOIN problems p ON p.contest_id = c.contest_id "
-        f"WHERE c.contest_id IN ({placeholders}) "
-        "GROUP BY c.contest_id "
-        "HAVING COUNT(p.problem_id) = 0",
-        contest_ids,
+        "SELECT c.contest_uid FROM contests c "
+        "LEFT JOIN problems p ON p.contest_uid = c.contest_uid "
+        f"WHERE c.contest_uid IN ({placeholders}) "
+        "GROUP BY c.contest_uid "
+        "HAVING COUNT(p.problem_uid) = 0",
+        contest_uids,
     ).fetchall()
     return [row[0] for row in rows]
 
 
 def list_contests_missing_submissions(
-    conn: sqlite3.Connection, user_id: str, contest_ids: list[str]
+    conn: sqlite3.Connection, user_id: str, contest_uids: list[str]
 ) -> list[str]:
-    if not contest_ids:
+    if not contest_uids:
         return []
-    placeholders = ",".join(["?"] * len(contest_ids))
+    placeholders = ",".join(["?"] * len(contest_uids))
     rows = conn.execute(
-        "SELECT c.contest_id FROM contests c "
-        "LEFT JOIN sync_state ss ON ss.user_id = ? AND ss.contest_id = c.contest_id "
-        "LEFT JOIN problems p ON p.contest_id = c.contest_id "
-        "LEFT JOIN submissions s ON s.problem_id = p.problem_id AND s.user_id = ? "
-        f"WHERE c.contest_id IN ({placeholders}) "
-        "GROUP BY c.contest_id "
-        "HAVING COUNT(s.submission_id) = 0 AND MAX(ss.user_id) IS NULL",
-        [user_id, user_id, *contest_ids],
+        "SELECT c.contest_uid FROM contests c "
+        "LEFT JOIN sync_state ss ON ss.user_id = ? AND ss.oj = 'atcoder' AND ss.key = c.contest_uid "
+        "LEFT JOIN problems p ON p.contest_uid = c.contest_uid "
+        "LEFT JOIN submissions s ON s.problem_uid = p.problem_uid AND s.user_id = ? "
+        f"WHERE c.contest_uid IN ({placeholders}) "
+        "GROUP BY c.contest_uid "
+        "HAVING COUNT(s.submission_uid) = 0 AND MAX(ss.user_id) IS NULL",
+        [user_id, user_id, *contest_uids],
     ).fetchall()
     return [row[0] for row in rows]

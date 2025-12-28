@@ -5,6 +5,7 @@ import unittest
 from crawler.archive import crawl_archive, find_next_page_url, parse_archive
 from db.schema import init_db
 from db.dao import upsert_contests
+from oj.atcoder import atcoder_oj
 import sqlite3
 
 
@@ -14,6 +15,7 @@ class ArchiveParserTest(unittest.TestCase):
         contests = parse_archive(html, category="abc")
         self.assertEqual(len(contests), 2)
         self.assertEqual(contests[0]["contest_id"], "abc100")
+        self.assertEqual(contests[0]["contest_uid"], atcoder_oj.contest_uid("abc100"))
         self.assertEqual(contests[0]["category"], "abc")
 
     def test_find_next_page(self) -> None:

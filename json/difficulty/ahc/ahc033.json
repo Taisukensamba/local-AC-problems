@@ -1,0 +1,30 @@
+{
+  "contest_slug": "ahc033",
+  "contest_category": "ahc",
+  "generated_at": "2025-12-28T15:54:41.333922+09:00",
+  "rated_only": true,
+  "participants_used": 837,
+  "rating_summary": {
+    "min": 8.0,
+    "median": 1296.0,
+    "max": 3175.0
+  },
+  "tasks": {
+    "ahc033_a": {
+      "difficulty": 3747,
+      "n": 837,
+      "ac": 789,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "ahc033_b": {
+      "difficulty": 3747,
+      "n": 837,
+      "ac": 656,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

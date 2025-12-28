@@ -1,0 +1,46 @@
+{
+  "contest_slug": "arc100",
+  "contest_category": "arc",
+  "generated_at": "2025-12-28T15:44:56.605209+09:00",
+  "rated_only": true,
+  "participants_used": 784,
+  "rating_summary": {
+    "min": 3.0,
+    "median": 1341.5,
+    "max": 2771.0
+  },
+  "tasks": {
+    "arc100_a": {
+      "difficulty": 1089,
+      "n": 784,
+      "ac": 643,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc100_b": {
+      "difficulty": 1801,
+      "n": 784,
+      "ac": 294,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc100_c": {
+      "difficulty": 2111,
+      "n": 784,
+      "ac": 156,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "arc100_d": {
+      "difficulty": 3486,
+      "n": 784,
+      "ac": 2,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    }
+  }
+}

@@ -1,6 +1,6 @@
-# AC-problems
+# Local CP Problems
 
-AtCoder Problems 関連データを同期して、ローカルで閲覧・確認するためのツールです。
+AtCoder / Codeforces の問題・提出データを同期して、ローカルで閲覧・確認するためのツールです。
 
 ## セットアップ
 
@@ -15,17 +15,25 @@ python3 -m pip install -r requirements.txt
 `config/config.toml` を編集します（環境変数でも可）。
 
 ```toml
+[atcoder]
 user_id = "your_atcoder_id"
-rate_limit = 1.0
 
-[sync]
+[atcoder.sync]
 mode = "cookie" # api / cookie / hybrid
 
-[difficulty]
+[atcoder.difficulty]
 source_url = "/path/to/local-AC-problems/data/problem-models.json"
 
-[cookie]
+[atcoder.cookie]
 revel_session = "REVEL_SESSION_HERE"
+
+[codeforces]
+handle = "your_codeforces_handle"
+include_gym = false
+
+[rate_limit]
+atcoder_rps = 1.0
+codeforces_min_interval_seconds = 2.0
 
 [cache]
 enabled = true
@@ -94,6 +102,16 @@ submissions（差分）:
 curl -s -X POST http://127.0.0.1:8000/api/sync \
   -H 'Content-Type: application/json' \
   -d '{"contest": false, "tasks": false, "submissions": true, "mode": "cookie", "submissions_incremental": true}'
+```
+
+Codeforces problems:
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/sync/codeforces/problems
+```
+
+Codeforces submissions:
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/sync/codeforces/submissions
 ```
 
 進捗の確認:

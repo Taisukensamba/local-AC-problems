@@ -1,0 +1,63 @@
+{
+  "contest_slug": "agc062",
+  "contest_category": "agc",
+  "generated_at": "2025-12-28T15:52:40.197702+09:00",
+  "rated_only": true,
+  "participants_used": 689,
+  "rating_summary": {
+    "min": 1200.0,
+    "median": 1868.0,
+    "max": 3897.0
+  },
+  "tasks": {
+    "agc062_a": {
+      "difficulty": 1099,
+      "n": 689,
+      "ac": 640,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc062_b": {
+      "difficulty": 2407,
+      "n": 689,
+      "ac": 163,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc062_c": {
+      "difficulty": 2320,
+      "n": 689,
+      "ac": 194,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc062_d": {
+      "difficulty": 3274,
+      "n": 689,
+      "ac": 22,
+      "flags": [
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc062_e": {
+      "difficulty": 4233,
+      "n": 689,
+      "ac": 0,
+      "flags": [
+        "NO_AC",
+        "IMPORTED_OVERWRITE"
+      ]
+    },
+    "agc062_f": {
+      "difficulty": 5000,
+      "n": 689,
+      "ac": 0,
+      "flags": [
+        "NO_AC"
+      ]
+    }
+  }
+}

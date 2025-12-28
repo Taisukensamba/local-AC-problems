@@ -1,0 +1,22 @@
+{
+  "contest_slug": "ahc001",
+  "contest_category": "ahc",
+  "generated_at": "2025-12-28T15:53:13.717921+09:00",
+  "rated_only": true,
+  "participants_used": 0,
+  "rating_summary": {
+    "min": null,
+    "median": null,
+    "max": null
+  },
+  "tasks": {
+    "ahc001_a": {
+      "difficulty": null,
+      "n": 0,
+      "ac": 0,
+      "flags": [
+        "NO_DATA"
+      ]
+    }
+  }
+}

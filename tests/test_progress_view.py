@@ -3,6 +3,7 @@ import unittest
 
 from db.dao import upsert_contests, upsert_problems, upsert_submissions
 from db.schema import connect, init_db
+from oj.atcoder import atcoder_oj
 
 
 class ProgressViewTest(unittest.TestCase):
@@ -15,6 +16,8 @@ class ProgressViewTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -28,13 +31,19 @@ class ProgressViewTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Sample Problem",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": 2,
                         }
                     ],
@@ -43,8 +52,11 @@ class ProgressViewTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "submission_id": 1,
-                            "problem_id": "abc100_a",
+                            "submission_uid": atcoder_oj.submission_uid(1),
+                            "oj": atcoder_oj.name,
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
                             "user_id": "alice",
                             "epoch_second": 100,
                             "result": "WA",
@@ -54,8 +66,11 @@ class ProgressViewTest(unittest.TestCase):
                             "url": "https://atcoder.jp/contests/abc100/submissions/1",
                         },
                         {
-                            "submission_id": 2,
-                            "problem_id": "abc100_a",
+                            "submission_uid": atcoder_oj.submission_uid(2),
+                            "oj": atcoder_oj.name,
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
                             "user_id": "alice",
                             "epoch_second": 120,
                             "result": "AC",
@@ -69,8 +84,13 @@ class ProgressViewTest(unittest.TestCase):
                 conn.commit()
                 row = conn.execute(
                     "SELECT is_ac, first_ac_epoch, last_submit_epoch, ac_count, wa_count "
-                    "FROM progress WHERE problem_id = ? AND user_id = ?",
-                    ("abc100_a", "alice"),
+                    "FROM progress WHERE problem_uid = ? AND user_id = ?",
+                    (
+                        atcoder_oj.problem_uid(
+                            contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                        ),
+                        "alice",
+                    ),
                 ).fetchone()
             finally:
                 conn.close()

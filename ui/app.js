@@ -4,7 +4,8 @@ const userEl = document.getElementById("user");
 const syncButton = document.getElementById("sync-run");
 const syncStatusEl = document.getElementById("sync-status");
 const syncContestsInput = document.getElementById("sync-contests");
-const syncAllButton = document.getElementById("sync-all");
+const syncAllButton = null;
+const syncCodeforcesButton = document.getElementById("sync-cf");
 const tabButtons = document.querySelectorAll("[data-tab]");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
 const tableTabs = document.querySelectorAll(".tabs-secondary .tab-button");
@@ -16,11 +17,52 @@ const listLoadMoreButton = document.getElementById("list-load-more");
 const listDiffTabsEl = document.getElementById("list-diff-tabs");
 const toggleCompleted = document.getElementById("toggle-completed");
 const toggleDiff = document.getElementById("toggle-diff");
+const filterQueryInput = document.getElementById("filter-query");
+const filterOjSelect = document.getElementById("filter-oj");
+const filterTagInput = document.getElementById("filter-tag");
+const filterMinDiffInput = document.getElementById("filter-min-diff");
+const filterMaxDiffInput = document.getElementById("filter-max-diff");
+const filterApplyButton = document.getElementById("filter-apply");
 
 const tables = [
   { key: "abc", label: "ABC", columns: ["A", "B", "C", "D", "E", "F", "G", "H"] },
   { key: "arc", label: "ARC", columns: ["A", "B", "C", "D", "E", "F"] },
   { key: "agc", label: "AGC", columns: ["A", "B", "C", "D", "E", "F"] },
+  {
+    key: "cf-ecr",
+    label: "ECR",
+    columns: ["A", "B", "C", "D", "E", "F", "G", "H"],
+  },
+  {
+    key: "cf-global",
+    label: "Global",
+    columns: ["A", "B", "C", "D", "E", "F", "G", "H"],
+  },
+  {
+    key: "cf-div1+2",
+    label: "Div1+2",
+    columns: ["A", "B", "C", "D", "E", "F", "G", "H"],
+  },
+  {
+    key: "cf-div1",
+    label: "Div1",
+    columns: ["A", "B", "C", "D", "E", "F", "G", "H"],
+  },
+  {
+    key: "cf-div2",
+    label: "Div2",
+    columns: ["A", "B", "C", "D", "E", "F", "G", "H"],
+  },
+  {
+    key: "cf-div3",
+    label: "Div3",
+    columns: ["A", "B", "C", "D", "E", "F", "G", "H"],
+  },
+  {
+    key: "cf-div4",
+    label: "Div4",
+    columns: ["A", "B", "C", "D", "E", "F", "G", "H"],
+  },
 ];
 
 const tableState = Object.fromEntries(
@@ -63,6 +105,11 @@ const listState = {
   loading: false,
   done: false,
   groups: new Map(),
+  query: "",
+  oj: "all",
+  tag: "",
+  minDiff: "",
+  maxDiff: "",
 };
 
 async function getJSON(url) {
@@ -81,9 +128,21 @@ async function postJSON(url, payload) {
   return res.json();
 }
 
-function diffClassFor(diffValue) {
+function diffClassFor(diffValue, oj) {
   if (diffValue === null || diffValue === undefined) return "diff-unknown";
   if (diffValue < 0) return "diff-neg";
+  if (oj === "codeforces") {
+    if (diffValue < 1200) return "diff-cf-0";
+    if (diffValue < 1400) return "diff-cf-1200";
+    if (diffValue < 1600) return "diff-cf-1400";
+    if (diffValue < 1900) return "diff-cf-1600";
+    if (diffValue < 2100) return "diff-cf-1900";
+    if (diffValue < 2300) return "diff-cf-2100";
+    if (diffValue < 2400) return "diff-cf-2300";
+    if (diffValue < 2600) return "diff-cf-2400";
+    if (diffValue < 3000) return "diff-cf-2600";
+    return "diff-cf-3000";
+  }
   if (diffValue < 400) return "diff-0";
   if (diffValue < 800) return "diff-400";
   if (diffValue < 1200) return "diff-800";
@@ -97,22 +156,46 @@ function diffClassFor(diffValue) {
   return "diff-4000";
 }
 
-function diffPercentFor(diffValue) {
+function diffPercentFor(diffValue, oj) {
   if (typeof diffValue !== "number" || Number.isNaN(diffValue) || diffValue < 0) return 0;
+  if (oj === "codeforces") {
+    const ranges = [
+      [0, 1199],
+      [1200, 1399],
+      [1400, 1599],
+      [1600, 1899],
+      [1900, 2099],
+      [2100, 2299],
+      [2300, 2399],
+      [2400, 2599],
+      [2600, 2999],
+    ];
+    for (const [min, max] of ranges) {
+      if (diffValue >= min && diffValue <= max) {
+        const percent = ((diffValue - min) / (max - min + 1)) * 100;
+        return Math.max(0, Math.min(100, Math.round(percent)));
+      }
+    }
+    return 100;
+  }
   const start = Math.floor(diffValue / 400) * 400;
   const percent = ((diffValue - start) / 400) * 100;
   return Math.max(0, Math.min(100, Math.round(percent)));
 }
 
-function buildDiffRing(diffValue) {
-  const diffClass = diffClassFor(diffValue);
+function buildDiffRing(diffValue, oj) {
+  const diffClass = diffClassFor(diffValue, oj);
   const diffLabel = diffValue === null ? "?" : diffValue;
   const ring = document.createElement("span");
   ring.className = `diff-ring cell-diff ${diffClass}`.trim();
-  if (typeof diffValue === "number" && diffValue >= 3200) {
+  if (
+    typeof diffValue === "number" &&
+    ((oj === "codeforces" && diffValue >= 3000) ||
+      (oj !== "codeforces" && diffValue >= 3200))
+  ) {
     ring.classList.add("diff-ring-static");
   }
-  ring.style.setProperty("--diff-percent", `${diffPercentFor(diffValue)}%`);
+  ring.style.setProperty("--diff-percent", `${diffPercentFor(diffValue, oj)}%`);
   ring.title = diffValue === null ? "Difficulty: ?" : `Difficulty: ${diffValue}`;
   ring.setAttribute("aria-label", diffValue === null ? "Difficulty: ?" : `Difficulty: ${diffLabel}`);
   return ring;
@@ -131,6 +214,7 @@ function setActiveTab(key) {
   if (secondaryTabs) {
     secondaryTabs.style.display = key === "tables" ? "flex" : "none";
   }
+  window.localStorage.setItem("activeTab", key);
 }
 
 function setActiveTable(key) {
@@ -143,6 +227,7 @@ function setActiveTable(key) {
     panel.classList.toggle("is-active", active);
     panel.style.display = active ? "block" : "none";
   });
+  window.localStorage.setItem("activeTableTab", key);
 }
 
 function renderSummary(items) {
@@ -199,14 +284,23 @@ function _renderListItem(item) {
   link.href = item.url;
   link.target = "_blank";
   link.rel = "noreferrer";
-  link.textContent = item.title || item.problem_id;
+  link.textContent = item.title || item.problem_uid;
   const meta = document.createElement("span");
   meta.className = "list-meta-badges";
   const contestBadge = document.createElement("span");
   contestBadge.className = "list-badge";
-  contestBadge.textContent = `${item.contest_id} ${item.task_index}`;
+  const contestLabel = item.contest_id ? `${item.contest_id} ${item.task_index || ""}`.trim() : "";
+  contestBadge.textContent = `${item.oj}${contestLabel ? ` · ${contestLabel}` : ""}`;
   meta.appendChild(contestBadge);
-  meta.appendChild(buildDiffRing(diffValue));
+  meta.appendChild(buildDiffRing(diffValue, item.oj));
+  if (item.tags && item.tags.length) {
+    item.tags.slice(0, 3).forEach((tag) => {
+      const tagEl = document.createElement("span");
+      tagEl.className = "tag";
+      tagEl.textContent = tag;
+      meta.appendChild(tagEl);
+    });
+  }
   left.appendChild(link);
   left.appendChild(meta);
   const right = document.createElement("span");
@@ -237,7 +331,12 @@ async function fetchListPage() {
   const statusParam = listState.status === "all" ? "" : listState.status;
   const baseParams = `limit=${listState.limit}&offset=${listState.offset}`;
   const statusFilter = statusParam ? `&status=${statusParam}` : "";
-  const url = `/api/problems?${baseParams}${statusFilter}`;
+  const query = listState.query ? `&query=${encodeURIComponent(listState.query)}` : "";
+  const ojParam = listState.oj ? `&oj=${encodeURIComponent(listState.oj)}` : "";
+  const tagParam = listState.tag ? `&tag=${encodeURIComponent(listState.tag)}` : "";
+  const minDiff = listState.minDiff ? `&minDiff=${encodeURIComponent(listState.minDiff)}` : "";
+  const maxDiff = listState.maxDiff ? `&maxDiff=${encodeURIComponent(listState.maxDiff)}` : "";
+  const url = `/api/problems?${baseParams}${statusFilter}${query}${ojParam}${tagParam}${minDiff}${maxDiff}`;
   const data = await getJSON(url);
   if (!data) {
     if (listStatusEl) listStatusEl.textContent = "load failed";
@@ -271,10 +370,13 @@ function renderRecent(items) {
     const row = document.createElement("div");
     row.className = "recent-item";
     const label = item.result === "AC" ? "AC" : item.result;
+    const contest = item.contest_id ? item.contest_id : "";
+    const oj = item.oj ? item.oj : "";
+    const contestLabel = contest ? `${oj} · ${contest}` : oj;
     row.innerHTML = `
       <div>
-        <div>${item.title || item.problem_id}</div>
-        <small>${item.contest_id || ""} · ${label}</small>
+        <div>${item.title || item.problem_uid}</div>
+        <small>${contestLabel} · ${label}</small>
       </div>
       <a href="${item.url}" target="_blank" rel="noreferrer">開く</a>
     `;
@@ -282,13 +384,37 @@ function renderRecent(items) {
   });
 }
 
-function buildContestCell(contestId) {
+function formatContestLabel(contestId, contestUid, contestTitle) {
+  if (!contestUid || !contestUid.startsWith("codeforces:")) {
+    return contestId.toUpperCase();
+  }
+  if (contestTitle) {
+    const patterns = [
+      /Educational Codeforces Round\s+(\d+)/i,
+      /Codeforces Global Round\s+(\d+)/i,
+      /Codeforces Round\s+(\d+)/i,
+    ];
+    for (const pattern of patterns) {
+      const match = contestTitle.match(pattern);
+      if (match) {
+        return `Round ${match[1]}`;
+      }
+    }
+  }
+  return contestId.toUpperCase();
+}
+
+function buildContestCell(contestId, contestUid, contestTitle) {
   const cell = document.createElement("td");
   const link = document.createElement("a");
-  link.href = `https://atcoder.jp/contests/${contestId}`;
+  if (contestUid && contestUid.startsWith("codeforces:")) {
+    link.href = `https://codeforces.com/contest/${contestId}`;
+  } else {
+    link.href = `https://atcoder.jp/contests/${contestId}`;
+  }
   link.target = "_blank";
   link.rel = "noreferrer";
-  link.textContent = contestId.toUpperCase();
+  link.textContent = formatContestLabel(contestId, contestUid, contestTitle);
   cell.appendChild(link);
   return cell;
 }
@@ -299,9 +425,22 @@ function buildProblemCell(state, index, prob) {
     cell.textContent = "-";
     return cell;
   }
+  if (Array.isArray(prob)) {
+    const wrap = document.createElement("div");
+    wrap.className = "cell-group";
+    prob.forEach((item) => {
+      wrap.appendChild(buildProblemLink(state, index, item));
+    });
+    cell.appendChild(wrap);
+    return cell;
+  }
+  cell.appendChild(buildProblemLink(state, index, prob));
+  return cell;
+}
+
+function buildProblemLink(state, index, prob) {
   const diffValue = typeof prob.difficulty === "number" ? prob.difficulty : null;
-  const diffLabel = diffValue === null ? "?" : prob.difficulty;
-  const diffClass = diffClassFor(diffValue);
+  const diffClass = diffClassFor(diffValue, prob.oj);
   const link = document.createElement("a");
   link.className = `cell ${diffClass} ${prob.is_ac ? "ac" : ""}`.trim();
   if (prob.contest_ac) {
@@ -316,13 +455,12 @@ function buildProblemCell(state, index, prob) {
   link.rel = "noreferrer";
   link.title = prob.title;
   link.classList.add("has-ring");
-  link.appendChild(buildDiffRing(diffValue));
+  link.appendChild(buildDiffRing(diffValue, prob.oj));
   const indexEl = document.createElement("span");
   indexEl.className = "cell-index";
-  indexEl.textContent = index;
+  indexEl.textContent = prob.task_index || index;
   link.appendChild(indexEl);
-  cell.appendChild(link);
-  return cell;
+  return link;
 }
 
 function applyContestFilters(target) {
@@ -338,12 +476,20 @@ function renderContestRows(state, items) {
     const row = document.createElement("tr");
     const allSolved = contest.problems.length > 0 && contest.problems.every((p) => p.is_ac);
     row.dataset.complete = allSolved ? "true" : "false";
-    row.appendChild(buildContestCell(contest.contest_id));
-    const byIndex = Object.fromEntries(
-      contest.problems.map((p) => [p.task_index, p])
+    row.appendChild(
+      buildContestCell(contest.contest_id, contest.contest_uid, contest.contest_title)
     );
+    const byIndex = new Map();
+    contest.problems.forEach((p) => {
+      const key = p.task_index || "";
+      const prefix = key ? key[0] : "";
+      const bucket = byIndex.get(prefix) || [];
+      bucket.push(p);
+      byIndex.set(prefix, bucket);
+    });
     state.columns.forEach((index) => {
-      row.appendChild(buildProblemCell(state, index, byIndex[index]));
+      const cellItems = byIndex.get(index) || null;
+      row.appendChild(buildProblemCell(state, index, cellItems));
     });
     state.body.appendChild(row);
   });
@@ -390,8 +536,12 @@ function initTabs() {
       }
     });
   });
-  setActiveTab("tables");
-  setActiveTable("abc");
+  const savedTab = window.localStorage.getItem("activeTab") || "tables";
+  const savedTable = window.localStorage.getItem("activeTableTab") || "abc";
+  setActiveTab(savedTab);
+  if (savedTab === "tables") {
+    setActiveTable(savedTable);
+  }
 }
 
 function initToggles() {
@@ -450,6 +600,26 @@ function initList() {
   if (listLoadMoreButton) {
     listLoadMoreButton.addEventListener("click", fetchListPage);
   }
+  if (filterApplyButton) {
+    filterApplyButton.addEventListener("click", () => {
+      listState.query = filterQueryInput ? filterQueryInput.value.trim() : "";
+      listState.oj = filterOjSelect ? filterOjSelect.value : "all";
+      listState.tag = filterTagInput ? filterTagInput.value.trim() : "";
+      listState.minDiff = filterMinDiffInput ? filterMinDiffInput.value.trim() : "";
+      listState.maxDiff = filterMaxDiffInput ? filterMaxDiffInput.value.trim() : "";
+      resetList();
+    });
+  }
+  [filterQueryInput, filterTagInput, filterMinDiffInput, filterMaxDiffInput].forEach(
+    (input) => {
+      if (!input) return;
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          if (filterApplyButton) filterApplyButton.click();
+        }
+      });
+    }
+  );
   _ensureListGroups();
 }
 
@@ -549,23 +719,24 @@ function initSync() {
   setInterval(pollSyncStatus, 5000);
 
   if (syncAllButton) {
-    syncAllButton.addEventListener("click", async () => {
-      if (starting || syncAllButton.disabled) return;
-      const ok = window.confirm(
-        "全同期は時間がかかります。実行しますか？"
-      );
-      if (!ok) return;
+    syncAllButton.disabled = true;
+  }
+
+  if (syncCodeforcesButton) {
+    syncCodeforcesButton.addEventListener("click", async () => {
+      if (starting || syncCodeforcesButton.disabled) return;
       starting = true;
-      syncAllButton.disabled = true;
-      syncStatusEl.textContent = "sync: starting...";
-      const res = await postJSON("/api/sync/all", {});
+      syncCodeforcesButton.disabled = true;
+      syncStatusEl.textContent = "sync: codeforces...";
+      const res = await postJSON("/api/sync/codeforces/submissions", {});
       if (!res) {
-        syncStatusEl.textContent = "sync: failed";
-        syncAllButton.disabled = false;
+        syncStatusEl.textContent = "sync: codeforces failed";
+        syncCodeforcesButton.disabled = false;
         starting = false;
         return;
       }
-      await pollSyncStatus();
+      syncStatusEl.textContent = "sync: codeforces started";
+      syncCodeforcesButton.disabled = false;
       starting = false;
     });
   }
@@ -581,7 +752,13 @@ async function initDashboard() {
   else recentEl.innerHTML = '<div class="recent-item">読み込み失敗</div>';
 
   const me = await getJSON("/api/me");
-  userEl.textContent = me ? `user: ${me.user_id}` : "user: -";
+  if (me) {
+    const atcoder = me.atcoder_user_id || "-";
+    const codeforces = me.codeforces_handle || "-";
+    userEl.textContent = `user: ${atcoder} / ${codeforces}`;
+  } else {
+    userEl.textContent = "user: -";
+  }
 }
 
 function initTables() {

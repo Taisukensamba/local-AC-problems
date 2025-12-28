@@ -16,8 +16,12 @@ def connect(db_path: str | None = None) -> sqlite3.Connection:
     return conn
 
 
-def _read_migration_sql() -> str:
+def _read_migration_sql(version: int | None = None) -> str:
     migrations_dir = Path(__file__).resolve().parent.parent / "data" / "migrations"
+    if version is not None:
+        target = migrations_dir / f"{version:03d}_rebuild_oj.sql"
+        if target.exists():
+            return target.read_text(encoding="utf-8")
     parts = []
     for path in sorted(migrations_dir.glob("*.sql")):
         parts.append(path.read_text(encoding="utf-8"))
@@ -25,9 +29,13 @@ def _read_migration_sql() -> str:
 
 
 def init_db(db_path: str | None = None) -> None:
-    sql = _read_migration_sql()
     conn = connect(db_path)
     try:
+        row = conn.execute("PRAGMA user_version").fetchone()
+        current_version = row[0] if row else 0
+        if current_version >= 4:
+            return
+        sql = _read_migration_sql(version=4)
         conn.executescript(sql)
         conn.commit()
     finally:

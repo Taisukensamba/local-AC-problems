@@ -3,8 +3,9 @@ import tempfile
 import unittest
 
 from crawler.submissions_me import crawl_submissions_me, detect_login_required, parse_submissions_me
-from db.dao import get_sync_state, list_problem_ids_by_contest, upsert_contests, upsert_problems
+from db.dao import get_sync_state, list_problem_uids_by_contest, upsert_contests, upsert_problems
 from db.schema import connect, init_db
+from oj.atcoder import atcoder_oj
 
 
 class SubmissionsMeTest(unittest.TestCase):
@@ -12,7 +13,12 @@ class SubmissionsMeTest(unittest.TestCase):
         html = pathlib.Path("data/fixtures/submissions_me_page1.html").read_text(encoding="utf-8")
         items = parse_submissions_me(html, "abc100", "alice")
         self.assertEqual(items[0]["submission_id"], 102)
-        self.assertEqual(items[0]["problem_id"], "abc100_a")
+        self.assertEqual(
+            items[0]["problem_uid"],
+            atcoder_oj.problem_uid(
+                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+            ),
+        )
 
     def test_parse_submissions_me_table_v2(self) -> None:
         html = pathlib.Path("data/fixtures/submissions_me_table2.html").read_text(encoding="utf-8")
@@ -47,6 +53,8 @@ class SubmissionsMeTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -60,23 +68,35 @@ class SubmissionsMeTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                         {
-                            "problem_id": "abc100_b",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="B", name=None, problem_id="abc100_b"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "B",
                             "title": "Beta",
                             "point": 200,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_b",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         },
                     ],
@@ -84,8 +104,10 @@ class SubmissionsMeTest(unittest.TestCase):
                 stats = crawl_submissions_me(fetch, conn, "abc100", "alice")
                 conn.commit()
                 self.assertEqual(stats["inserted"], 3)
-                state = get_sync_state(conn, "alice", "abc100")
-                self.assertEqual(state["last_submission_id"], 102)
+                state = get_sync_state(
+                    conn, "alice", atcoder_oj.name, atcoder_oj.contest_uid("abc100")
+                )
+                self.assertEqual(state["last_submission_id"], "102")
             finally:
                 conn.close()
 
@@ -110,6 +132,8 @@ class SubmissionsMeTest(unittest.TestCase):
                     conn,
                     [
                         {
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "oj": atcoder_oj.name,
                             "contest_id": "abc100",
                             "title": "Sample Contest",
                             "start_epoch": 1,
@@ -123,24 +147,39 @@ class SubmissionsMeTest(unittest.TestCase):
                     conn,
                     [
                         {
-                            "problem_id": "abc100_a",
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
                             "contest_id": "abc100",
                             "task_index": "A",
                             "title": "Alpha",
                             "point": 100,
                             "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
                             "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
                             "updated_epoch": None,
                         }
                     ],
                 )
                 conn.commit()
-                known = list_problem_ids_by_contest(conn, "abc100")
-                self.assertEqual(known, {"abc100_a"})
+                known = list_problem_uids_by_contest(conn, atcoder_oj.contest_uid("abc100"))
+                self.assertEqual(
+                    known,
+                    {
+                        atcoder_oj.problem_uid(
+                            contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                        )
+                    },
+                )
                 stats = crawl_submissions_me(fetch, conn, "abc100", "alice")
                 conn.commit()
                 self.assertEqual(stats["inserted"], 2)
-                state = get_sync_state(conn, "alice", "abc100")
+                state = get_sync_state(
+                    conn, "alice", atcoder_oj.name, atcoder_oj.contest_uid("abc100")
+                )
                 self.assertIsNotNone(state)
             finally:
                 conn.close()

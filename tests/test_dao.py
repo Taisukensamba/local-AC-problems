@@ -4,6 +4,7 @@ import unittest
 
 from db.dao import get_latest_submission_epoch, upsert_contests, upsert_problems, upsert_submissions
 from db.schema import init_db
+from oj.atcoder import atcoder_oj
 
 
 class DaoTest(unittest.TestCase):
@@ -21,6 +22,8 @@ class DaoTest(unittest.TestCase):
             self.conn,
             [
                 {
+                    "contest_uid": atcoder_oj.contest_uid("abc001"),
+                    "oj": atcoder_oj.name,
                     "contest_id": "abc001",
                     "title": "Sample Contest",
                     "start_epoch": 1,
@@ -33,7 +36,8 @@ class DaoTest(unittest.TestCase):
         self.conn.commit()
         self.assertEqual(count, 1)
         row = self.conn.execute(
-            "SELECT title, duration_sec FROM contests WHERE contest_id = ?", ("abc001",)
+            "SELECT title, duration_sec FROM contests WHERE contest_uid = ?",
+            (atcoder_oj.contest_uid("abc001"),),
         ).fetchone()
         self.assertEqual(row, ("Sample Contest", 600))
 
@@ -42,6 +46,8 @@ class DaoTest(unittest.TestCase):
             self.conn,
             [
                 {
+                    "contest_uid": atcoder_oj.contest_uid("abc001"),
+                    "oj": atcoder_oj.name,
                     "contest_id": "abc001",
                     "title": "Sample Contest",
                     "start_epoch": 1,
@@ -55,13 +61,19 @@ class DaoTest(unittest.TestCase):
             self.conn,
             [
                 {
-                    "problem_id": "abc001_a",
+                    "problem_uid": atcoder_oj.problem_uid(
+                        contest_id="abc001", index="A", name="Sample Problem", problem_id="abc001_a"
+                    ),
+                    "oj": atcoder_oj.name,
+                    "contest_uid": atcoder_oj.contest_uid("abc001"),
                     "contest_id": "abc001",
                     "task_index": "A",
                     "title": "Sample Problem",
                     "point": 100,
                     "url": "https://atcoder.jp/contests/abc001/tasks/abc001_1",
                     "difficulty": None,
+                    "solved_count": None,
+                    "tags_json": None,
                     "updated_epoch": 2,
                 }
             ],
@@ -69,7 +81,12 @@ class DaoTest(unittest.TestCase):
         self.conn.commit()
         self.assertEqual(count, 1)
         row = self.conn.execute(
-            "SELECT title, task_index FROM problems WHERE problem_id = ?", ("abc001_a",)
+            "SELECT title, task_index FROM problems WHERE problem_uid = ?",
+            (
+                atcoder_oj.problem_uid(
+                    contest_id="abc001", index="A", name="Sample Problem", problem_id="abc001_a"
+                ),
+            ),
         ).fetchone()
         self.assertEqual(row, ("Sample Problem", "A"))
 
@@ -78,6 +95,8 @@ class DaoTest(unittest.TestCase):
             self.conn,
             [
                 {
+                    "contest_uid": atcoder_oj.contest_uid("abc001"),
+                    "oj": atcoder_oj.name,
                     "contest_id": "abc001",
                     "title": "Sample Contest",
                     "start_epoch": 1,
@@ -91,13 +110,19 @@ class DaoTest(unittest.TestCase):
             self.conn,
             [
                 {
-                    "problem_id": "abc001_a",
+                    "problem_uid": atcoder_oj.problem_uid(
+                        contest_id="abc001", index="A", name="Sample Problem", problem_id="abc001_a"
+                    ),
+                    "oj": atcoder_oj.name,
+                    "contest_uid": atcoder_oj.contest_uid("abc001"),
                     "contest_id": "abc001",
                     "task_index": "A",
                     "title": "Sample Problem",
                     "point": 100,
                     "url": "https://atcoder.jp/contests/abc001/tasks/abc001_1",
                     "difficulty": None,
+                    "solved_count": None,
+                    "tags_json": None,
                     "updated_epoch": 2,
                 }
             ],
@@ -106,8 +131,11 @@ class DaoTest(unittest.TestCase):
             self.conn,
             [
                 {
-                    "submission_id": 10,
-                    "problem_id": "abc001_a",
+                    "submission_uid": atcoder_oj.submission_uid(10),
+                    "oj": atcoder_oj.name,
+                    "problem_uid": atcoder_oj.problem_uid(
+                        contest_id="abc001", index="A", name="Sample Problem", problem_id="abc001_a"
+                    ),
                     "user_id": "alice",
                     "epoch_second": 123,
                     "result": "AC",
@@ -121,7 +149,8 @@ class DaoTest(unittest.TestCase):
         self.conn.commit()
         self.assertEqual(count, 1)
         row = self.conn.execute(
-            "SELECT result, language FROM submissions WHERE submission_id = ?", (10,)
+            "SELECT result, language FROM submissions WHERE submission_uid = ?",
+            (atcoder_oj.submission_uid(10),),
         ).fetchone()
         self.assertEqual(row, ("AC", "Python"))
 
@@ -130,6 +159,8 @@ class DaoTest(unittest.TestCase):
             self.conn,
             [
                 {
+                    "contest_uid": atcoder_oj.contest_uid("abc001"),
+                    "oj": atcoder_oj.name,
                     "contest_id": "abc001",
                     "title": "Sample Contest",
                     "start_epoch": 1,
@@ -143,13 +174,19 @@ class DaoTest(unittest.TestCase):
             self.conn,
             [
                 {
-                    "problem_id": "abc001_a",
+                    "problem_uid": atcoder_oj.problem_uid(
+                        contest_id="abc001", index="A", name="Sample Problem", problem_id="abc001_a"
+                    ),
+                    "oj": atcoder_oj.name,
+                    "contest_uid": atcoder_oj.contest_uid("abc001"),
                     "contest_id": "abc001",
                     "task_index": "A",
                     "title": "Sample Problem",
                     "point": 100,
                     "url": "https://atcoder.jp/contests/abc001/tasks/abc001_1",
                     "difficulty": None,
+                    "solved_count": None,
+                    "tags_json": None,
                     "updated_epoch": 2,
                 }
             ],
@@ -158,8 +195,11 @@ class DaoTest(unittest.TestCase):
             self.conn,
             [
                 {
-                    "submission_id": 10,
-                    "problem_id": "abc001_a",
+                    "submission_uid": atcoder_oj.submission_uid(10),
+                    "oj": atcoder_oj.name,
+                    "problem_uid": atcoder_oj.problem_uid(
+                        contest_id="abc001", index="A", name="Sample Problem", problem_id="abc001_a"
+                    ),
                     "user_id": "alice",
                     "epoch_second": 123,
                     "result": "WA",
@@ -169,8 +209,11 @@ class DaoTest(unittest.TestCase):
                     "url": "https://atcoder.jp/contests/abc001/submissions/10",
                 },
                 {
-                    "submission_id": 11,
-                    "problem_id": "abc001_a",
+                    "submission_uid": atcoder_oj.submission_uid(11),
+                    "oj": atcoder_oj.name,
+                    "problem_uid": atcoder_oj.problem_uid(
+                        contest_id="abc001", index="A", name="Sample Problem", problem_id="abc001_a"
+                    ),
                     "user_id": "alice",
                     "epoch_second": 200,
                     "result": "AC",
@@ -182,4 +225,6 @@ class DaoTest(unittest.TestCase):
             ],
         )
         self.conn.commit()
-        self.assertEqual(get_latest_submission_epoch(self.conn, "alice"), 200)
+        self.assertEqual(
+            get_latest_submission_epoch(self.conn, "alice", atcoder_oj.name), 200
+        )
