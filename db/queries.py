@@ -11,7 +11,6 @@ def search_problems(
     max_diff: int | None,
     query: str | None,
     contest: str | None,
-    exclude_ahc: bool,
     limit: int,
     offset: int,
 ) -> list[dict]:
@@ -35,8 +34,7 @@ def search_problems(
     if contest:
         conditions.append("p.contest_id = ?")
         params.append(contest)
-    if exclude_ahc:
-        conditions.append("p.contest_id NOT GLOB 'ahc[0-9]*'")
+    conditions.append("p.contest_id NOT GLOB 'ahc[0-9]*'")
 
     where = ""
     if conditions:

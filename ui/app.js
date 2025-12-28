@@ -21,7 +21,6 @@ const tables = [
   { key: "abc", label: "ABC", columns: ["A", "B", "C", "D", "E", "F", "G", "H"] },
   { key: "arc", label: "ARC", columns: ["A", "B", "C", "D", "E", "F"] },
   { key: "agc", label: "AGC", columns: ["A", "B", "C", "D", "E", "F"] },
-  { key: "ahc", label: "AHC", columns: ["A"] },
 ];
 
 const tableState = Object.fromEntries(
@@ -238,7 +237,7 @@ async function fetchListPage() {
   const statusParam = listState.status === "all" ? "" : listState.status;
   const baseParams = `limit=${listState.limit}&offset=${listState.offset}`;
   const statusFilter = statusParam ? `&status=${statusParam}` : "";
-  const url = `/api/problems?${baseParams}${statusFilter}&exclude_ahc=true`;
+  const url = `/api/problems?${baseParams}${statusFilter}`;
   const data = await getJSON(url);
   if (!data) {
     if (listStatusEl) listStatusEl.textContent = "load failed";
@@ -316,19 +315,12 @@ function buildProblemCell(state, index, prob) {
   link.target = "_blank";
   link.rel = "noreferrer";
   link.title = prob.title;
-  if (state.key === "ahc") {
-    const indexEl = document.createElement("span");
-    indexEl.className = "cell-index";
-    indexEl.textContent = index;
-    link.appendChild(indexEl);
-  } else {
-    link.classList.add("has-ring");
-    link.appendChild(buildDiffRing(diffValue));
-    const indexEl = document.createElement("span");
-    indexEl.className = "cell-index";
-    indexEl.textContent = index;
-    link.appendChild(indexEl);
-  }
+  link.classList.add("has-ring");
+  link.appendChild(buildDiffRing(diffValue));
+  const indexEl = document.createElement("span");
+  indexEl.className = "cell-index";
+  indexEl.textContent = index;
+  link.appendChild(indexEl);
   cell.appendChild(link);
   return cell;
 }
