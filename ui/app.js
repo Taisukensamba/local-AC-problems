@@ -23,6 +23,7 @@ const filterTagInput = document.getElementById("filter-tag");
 const filterMinDiffInput = document.getElementById("filter-min-diff");
 const filterMaxDiffInput = document.getElementById("filter-max-diff");
 const filterApplyButton = document.getElementById("filter-apply");
+const dashboardOjSelect = document.getElementById("dashboard-oj");
 
 const tables = [
   { key: "abc", label: "ABC", columns: ["A", "B", "C", "D", "E", "F", "G", "H"] },
@@ -728,9 +729,23 @@ function initSync() {
       starting = true;
       syncCodeforcesButton.disabled = true;
       syncStatusEl.textContent = "sync: codeforces...";
-      const res = await postJSON("/api/sync/codeforces/submissions", {});
-      if (!res) {
-        syncStatusEl.textContent = "sync: codeforces failed";
+      const contestRes = await postJSON("/api/sync/codeforces/contests", {});
+      if (!contestRes) {
+        syncStatusEl.textContent = "sync: codeforces contests failed";
+        syncCodeforcesButton.disabled = false;
+        starting = false;
+        return;
+      }
+      const problemsRes = await postJSON("/api/sync/codeforces/problems", {});
+      if (!problemsRes) {
+        syncStatusEl.textContent = "sync: codeforces problems failed";
+        syncCodeforcesButton.disabled = false;
+        starting = false;
+        return;
+      }
+      const submissionsRes = await postJSON("/api/sync/codeforces/submissions", {});
+      if (!submissionsRes) {
+        syncStatusEl.textContent = "sync: codeforces submissions failed";
         syncCodeforcesButton.disabled = false;
         starting = false;
         return;
@@ -742,12 +757,13 @@ function initSync() {
   }
 }
 
-async function initDashboard() {
-  const summary = await getJSON("/api/progress/summary");
+async function loadDashboard(oj) {
+  const ojParam = oj ? `?oj=${encodeURIComponent(oj)}` : "";
+  const summary = await getJSON(`/api/progress/summary${ojParam}`);
   if (summary) renderSummary(summary);
   else summaryEl.innerHTML = '<div class="summary-item">読み込み失敗</div>';
 
-  const recent = await getJSON("/api/progress/recent?limit=8");
+  const recent = await getJSON(`/api/progress/recent?limit=8${oj ? `&oj=${encodeURIComponent(oj)}` : ""}`);
   if (recent) renderRecent(recent);
   else recentEl.innerHTML = '<div class="recent-item">読み込み失敗</div>';
 
@@ -759,6 +775,19 @@ async function initDashboard() {
   } else {
     userEl.textContent = "user: -";
   }
+}
+
+function initDashboard() {
+  const saved = window.localStorage.getItem("dashboardOj") || "all";
+  if (dashboardOjSelect) {
+    dashboardOjSelect.value = saved;
+    dashboardOjSelect.addEventListener("change", () => {
+      const value = dashboardOjSelect.value || "all";
+      window.localStorage.setItem("dashboardOj", value);
+      loadDashboard(value);
+    });
+  }
+  loadDashboard(saved);
 }
 
 function initTables() {

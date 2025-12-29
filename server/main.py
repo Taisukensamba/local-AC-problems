@@ -126,14 +126,19 @@ def get_problems(
 
 
 @app.get("/api/progress/summary")
-def get_progress_summary() -> list[dict]:
-    return _with_conn(lambda conn: progress_summary(conn, app.state.config.atcoder.user_id))
+def get_progress_summary(oj: str | None = Query(default="all")) -> list[dict]:
+    return _with_conn(
+        lambda conn: progress_summary(conn, app.state.config.atcoder.user_id, oj)
+    )
 
 
 @app.get("/api/progress/recent")
-def get_progress_recent(limit: int = Query(default=10, ge=1, le=50)) -> list[dict]:
+def get_progress_recent(
+    limit: int = Query(default=10, ge=1, le=50),
+    oj: str | None = Query(default="all"),
+) -> list[dict]:
     return _with_conn(
-        lambda conn: recent_submissions(conn, app.state.config.atcoder.user_id, limit)
+        lambda conn: recent_submissions(conn, app.state.config.atcoder.user_id, limit, oj)
     )
 
 
@@ -470,6 +475,7 @@ def start_sync_codeforces_submissions(background_tasks: BackgroundTasks) -> dict
         conn = connect()
         try:
             client = _build_codeforces_client(app.state.config)
+            fetch_json = lambda url: client.get_text(url, use_cache=False)
             state = get_sync_state(
                 conn,
                 app.state.config.codeforces.handle,
@@ -483,7 +489,7 @@ def start_sync_codeforces_submissions(background_tasks: BackgroundTasks) -> dict
                 except ValueError:
                     last_seen = None
             result = sync_codeforces_user_status(
-                client.get_text,
+                fetch_json,
                 conn,
                 app.state.config.codeforces.handle,
                 last_seen,

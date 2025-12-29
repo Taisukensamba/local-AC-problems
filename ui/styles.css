@@ -153,6 +153,27 @@ button:hover {
   margin-bottom: 12px;
 }
 
+.dashboard-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dashboard-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.dashboard-controls select {
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
 .tabs {
   display: flex;
   flex-wrap: wrap;
@@ -342,6 +363,11 @@ button:hover {
   width: 100%;
   margin-top: 12px;
   background: #f1b65c;
+}
+
+.list-load-top {
+  margin-top: 0;
+  margin-bottom: 12px;
 }
 
 .abc-table {

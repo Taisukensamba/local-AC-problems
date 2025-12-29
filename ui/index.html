@@ -308,7 +308,17 @@
       <section class="panel dashboard" data-tab-panel="dashboard">
       <div class="results-head">
         <h2>ダッシュボード</h2>
-        <span>progress</span>
+        <div class="dashboard-controls">
+          <label>
+            OJ
+            <select id="dashboard-oj">
+              <option value="all">All</option>
+              <option value="atcoder">AtCoder</option>
+              <option value="codeforces">Codeforces</option>
+            </select>
+          </label>
+          <span>progress</span>
+        </div>
       </div>
       <div class="dashboard-grid">
         <div>
@@ -360,13 +370,13 @@
             <button class="tab-button" data-list-status="unsolved">未AC</button>
             <button class="tab-button" data-list-status="solved">AC済</button>
           </div>
-          <div id="list-diff-tabs" class="list-tabs"></div>
-          <div class="list-meta">
-            <span id="list-status">loading...</span>
-          </div>
+        <div id="list-diff-tabs" class="list-tabs"></div>
+        <div class="list-meta">
+          <span id="list-status">loading...</span>
         </div>
+      </div>
+        <button id="list-load-more" class="list-load list-load-top" type="button">Load more</button>
         <div id="list-groups" class="list-groups"></div>
-        <button id="list-load-more" class="list-load" type="button">Load more</button>
       </section>
   </main>
   <script src="/ui/app.js"></script>
