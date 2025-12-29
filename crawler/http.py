@@ -51,9 +51,14 @@ class HttpClient:
         self._time_fn = time_fn
         self._user_agent = "AC-problems/0.1 (+https://github.com/your-org/ac-problems)"
 
-    def get_text(self, url: str, headers: dict | None = None) -> str:
+    def get_text(self, url: str, headers: dict | None = None, use_cache: bool = True) -> str:
         self._limiter.wait()
-        use_cache = self._cache.enabled and not _has_cookie(headers) and not url.startswith("file://")
+        use_cache = (
+            use_cache
+            and self._cache.enabled
+            and not _has_cookie(headers)
+            and not url.startswith("file://")
+        )
         cache_path = self._cache.dir_path / f"{_cache_key(url)}.json"
         if use_cache:
             cached = _load_cache(cache_path, self._cache.ttl_sec, self._time_fn)

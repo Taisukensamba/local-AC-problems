@@ -91,7 +91,15 @@ def search_problems(
     return results
 
 
-def progress_summary(conn: sqlite3.Connection, user_id: str) -> list[dict]:
+def progress_summary(conn: sqlite3.Connection, user_id: str, oj: str | None = None) -> list[dict]:
+    conditions = []
+    params: list[object] = [user_id]
+    if oj and oj != "all":
+        conditions.append("p.oj = ?")
+        params.append(oj)
+    where = ""
+    if conditions:
+        where = "WHERE " + " AND ".join(conditions)
     bins = [
         ("unknown", None),
         ("<0", -1),
@@ -127,9 +135,10 @@ def progress_summary(conn: sqlite3.Connection, user_id: str) -> list[dict]:
         "COUNT(*) AS total_count "
         "FROM problems p "
         "LEFT JOIN progress pr ON pr.problem_uid = p.problem_uid AND pr.user_id = ? "
+        f"{where} "
         "GROUP BY bin"
     )
-    rows = conn.execute(sql, (user_id,)).fetchall()
+    rows = conn.execute(sql, params).fetchall()
     by_bin = {row[0]: {"ac_count": row[1] or 0, "total_count": row[2] or 0} for row in rows}
     summary = []
     for label, _ in bins:
@@ -140,17 +149,29 @@ def progress_summary(conn: sqlite3.Connection, user_id: str) -> list[dict]:
     return summary
 
 
-def recent_submissions(conn: sqlite3.Connection, user_id: str, limit: int) -> list[dict]:
+def recent_submissions(
+    conn: sqlite3.Connection, user_id: str, limit: int, oj: str | None = None
+) -> list[dict]:
+    conditions = []
+    params: list[object] = [user_id]
+    if oj and oj != "all":
+        conditions.append("s.oj = ?")
+        params.append(oj)
+    where = ""
+    if conditions:
+        where = "AND " + " AND ".join(conditions)
     sql = (
         "SELECT s.submission_uid, s.problem_uid, s.epoch_second, s.result, s.language, s.url, "
         "p.title, p.contest_id, p.oj "
         "FROM submissions s "
         "LEFT JOIN problems p ON p.problem_uid = s.problem_uid "
         "WHERE s.user_id = ? "
+        f"{where} "
         "ORDER BY s.epoch_second DESC "
         "LIMIT ?"
     )
-    rows = conn.execute(sql, (user_id, limit)).fetchall()
+    params.append(limit)
+    rows = conn.execute(sql, params).fetchall()
     results = []
     for row in rows:
         results.append(
