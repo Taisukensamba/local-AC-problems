@@ -47,7 +47,7 @@ def _parse_int_prefix(text: str) -> int | None:
 
 
 def detect_login_required(html: str) -> bool:
-    markers = ["Sign In", "name=\"username\"", "action=\"/login\""]
+    markers = ["Sign In", "name=\"username\"", "action=\"/login\"", "ログイン"]
     return any(marker in html for marker in markers)
 
 

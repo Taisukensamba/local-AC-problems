@@ -11,7 +11,9 @@ def get_db_path() -> str:
 
 def connect(db_path: str | None = None) -> sqlite3.Connection:
     path = db_path or get_db_path()
-    conn = sqlite3.connect(path)
+    conn = sqlite3.connect(path, timeout=30)
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA busy_timeout = 30000")
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 

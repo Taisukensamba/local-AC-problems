@@ -4,6 +4,7 @@ from typing import Callable
 from urllib.error import HTTPError
 
 from config.loader import AppConfig, ConfigError
+from crawler.http import FetchError, LoginRequiredError
 from db.dao import ensure_sync_state
 from db.queries import list_contest_uids
 from crawler.cookie_auth import build_cookie_header, require_revel_session
@@ -40,6 +41,7 @@ def run_sync(
                 contest_ids = list_contest_uids(conn, atcoder_oj.name)
             total = len(contest_ids)
             done = 0
+            failure_streak = 0
             for contest_uid in contest_ids:
                 contest_id = contest_id_from_uid(contest_uid)
                 try:
@@ -49,15 +51,34 @@ def run_sync(
                         contest_id,
                         config.atcoder.user_id,
                     )
+                except LoginRequiredError as exc:
+                    stats["errors"].append(str(exc))
+                    raise
                 except HTTPError as exc:
                     if exc.code == 404:
                         stats["errors"].append(f"skip {contest_id}: 404")
                         ensure_sync_state(conn, config.atcoder.user_id, atcoder_oj.name, contest_uid)
-                        done += 1
-                        if on_progress:
-                            on_progress(contest_id, done, total)
-                        continue
-                    raise
+                        failure_streak = 0
+                    else:
+                        failure_streak += 1
+                        stats["errors"].append(f"error {contest_id}: HTTP {exc.code}")
+                        if failure_streak >= 10:
+                            raise
+                    done += 1
+                    if on_progress:
+                        on_progress(contest_id, done, total)
+                    continue
+                except FetchError as exc:
+                    failure_streak += 1
+                    stats["errors"].append(f"error {contest_id}: {exc.kind}")
+                    if failure_streak >= 10:
+                        raise
+                    done += 1
+                    if on_progress:
+                        on_progress(contest_id, done, total)
+                    continue
+                else:
+                    failure_streak = 0
                 stats["cookie"]["inserted"] += result["inserted"]
                 stats["cookie"]["updated"] += result["updated"]
                 done += 1

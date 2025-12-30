@@ -17,7 +17,7 @@ from crawler.codeforces_api import (
     sync_problemset as sync_codeforces_problemset,
     sync_user_status as sync_codeforces_user_status,
 )
-from crawler.http import HttpClient, cache_config_from_app
+from crawler.http import AdaptiveHttpClient, HttpClient, cache_config_from_app
 from crawler.sync import run_sync
 from crawler.tasks import crawl_tasks
 from db.queries import (
@@ -289,8 +289,8 @@ def get_cf_div4_contests(
     return _contests_by_category(codeforces_oj.name, "cf-div4", limit, offset)
 
 
-def _build_client(config) -> HttpClient:
-    return HttpClient(config.rate_limit.atcoder_rps, cache_config_from_app(config))
+def _build_client(config) -> AdaptiveHttpClient:
+    return AdaptiveHttpClient(cache_config_from_app(config))
 
 
 def _build_codeforces_client(config) -> HttpClient:
@@ -323,7 +323,7 @@ def _sync_tasks(conn, status: dict, fetch_html: Callable[[str], str], payload: d
     total = 0
     skipped = []
     for contest_uid in contest_uids:
-        contest_id = contest_id_from_uid(contest_uid)
+        contest_id = _contest_id_from_uid(contest_uid)
         status["progress"]["current"] = contest_id
         try:
             total += crawl_tasks(fetch_html, conn, contest_id)
@@ -356,7 +356,10 @@ def _sync_submissions(
     if contest_ids is None:
         contest_ids = list_contest_uids(conn, atcoder_oj.name)
     else:
-        contest_ids = [atcoder_oj.contest_uid(cid) for cid in contest_ids]
+        contest_ids = [
+            cid if cid.startswith(f"{atcoder_oj.name}:") else atcoder_oj.contest_uid(cid)
+            for cid in contest_ids
+        ]
 
     _set_progress(status, "submissions", total=len(contest_ids))
 
