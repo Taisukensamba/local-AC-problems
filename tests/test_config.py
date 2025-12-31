@@ -1,6 +1,8 @@
+import os
 import tempfile
 import textwrap
 import unittest
+from unittest import mock
 
 from config.loader import ConfigError, load_config
 
@@ -27,7 +29,12 @@ class ConfigTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile("w", delete=False) as f:
             f.write(content)
             path = f.name
-        config = load_config(path)
+        with mock.patch.dict(
+            os.environ,
+            {"AC_USER_ID": "", "AC_REVEL_SESSION": "", "AC_DIFFICULTY_SOURCE_URL": ""},
+            clear=False,
+        ):
+            config = load_config(path)
         self.assertEqual(config.atcoder.user_id, "alice")
         self.assertEqual(config.atcoder.sync.mode, "api")
         self.assertEqual(config.codeforces.handle, "alice_cf")
@@ -47,6 +54,11 @@ class ConfigTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile("w", delete=False) as f:
             f.write(content)
             path = f.name
-        with self.assertRaises(ConfigError) as ctx:
-            load_config(path)
-        self.assertIn("missing 'atcoder'", str(ctx.exception))
+        with mock.patch.dict(
+            os.environ,
+            {"AC_USER_ID": "", "AC_REVEL_SESSION": "", "AC_DIFFICULTY_SOURCE_URL": ""},
+            clear=False,
+        ):
+            with self.assertRaises(ConfigError) as ctx:
+                load_config(path)
+        self.assertIn("missing 'user_id'", str(ctx.exception))

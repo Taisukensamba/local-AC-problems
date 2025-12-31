@@ -645,11 +645,11 @@ function initInfiniteScroll() {
 
 function renderSyncStatus(allStatus, syncStatus) {
   if (!syncStatusEl) return;
-  if (!allStatus) {
+  if (!allStatus && !syncStatus) {
     syncStatusEl.textContent = "sync: unavailable";
     return;
   }
-  const running = allStatus.running;
+  const running = !!((allStatus && allStatus.running) || (syncStatus && syncStatus.running));
   if (!running) {
     syncStatusEl.textContent = "sync: idle";
     return;
@@ -679,7 +679,8 @@ async function pollSyncStatus() {
   ]);
   renderSyncStatus(allStatus, syncStatus);
   if (syncButton) {
-    syncButton.disabled = allStatus ? !!allStatus.running : false;
+    const running = !!((allStatus && allStatus.running) || (syncStatus && syncStatus.running));
+    syncButton.disabled = running;
   }
 }
 

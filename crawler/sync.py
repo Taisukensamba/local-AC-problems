@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from typing import Callable
-from urllib.error import HTTPError
-
 from config.loader import AppConfig, ConfigError
 from crawler.http import FetchError, LoginRequiredError
 from db.dao import ensure_sync_state
@@ -51,28 +49,28 @@ def run_sync(
                         contest_id,
                         config.atcoder.user_id,
                     )
+                    if result.get("skipped"):
+                        stats["errors"].append(f"skip {contest_id}: tasks not synced")
+                        done += 1
+                        if on_progress:
+                            on_progress(contest_id, done, total)
+                        continue
                 except LoginRequiredError as exc:
                     stats["errors"].append(str(exc))
                     raise
-                except HTTPError as exc:
-                    if exc.code == 404:
+                except FetchError as exc:
+                    if exc.status == 404:
                         stats["errors"].append(f"skip {contest_id}: 404")
                         ensure_sync_state(conn, config.atcoder.user_id, atcoder_oj.name, contest_uid)
                         failure_streak = 0
                     else:
                         failure_streak += 1
-                        stats["errors"].append(f"error {contest_id}: HTTP {exc.code}")
+                        detail = exc.kind
+                        if exc.status is not None:
+                            detail = f"{detail} {exc.status}"
+                        stats["errors"].append(f"error {contest_id}: {detail}")
                         if failure_streak >= 10:
                             raise
-                    done += 1
-                    if on_progress:
-                        on_progress(contest_id, done, total)
-                    continue
-                except FetchError as exc:
-                    failure_streak += 1
-                    stats["errors"].append(f"error {contest_id}: {exc.kind}")
-                    if failure_streak >= 10:
-                        raise
                     done += 1
                     if on_progress:
                         on_progress(contest_id, done, total)

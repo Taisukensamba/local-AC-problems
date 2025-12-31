@@ -1,1 +1,8 @@
 data/atcoder.db
+data/cache/
+data/problem-models.json
+data/sync_status.json
+json/
+.venv/
+__pycache__/
+*.pyc

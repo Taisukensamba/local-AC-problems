@@ -6,6 +6,7 @@ from typing import Callable
 from urllib.parse import urljoin
 
 from crawler.html_table import parse_first_table
+from crawler.http import LoginRequiredError
 from db.dao import (
     ensure_sync_state,
     get_sync_state,
@@ -151,13 +152,15 @@ def crawl_submissions_me(
         except ValueError:
             last_submission_id = None
     known_problems = list_problem_uids_by_contest(conn, contest_uid)
+    if not known_problems:
+        return {"inserted": 0, "updated": 0, "skipped": True}
     base_url = f"https://atcoder.jp/contests/{contest_id}/submissions/me"
     url = base_url
     all_new = []
     while url:
         html = fetch_html(url)
         if detect_login_required(html):
-            raise RuntimeError("login required")
+            raise LoginRequiredError(url)
         submissions = parse_submissions_me(html, contest_id, user_id)
         if last_submission_id is not None:
             submissions = [s for s in submissions if s["submission_id"] > last_submission_id]

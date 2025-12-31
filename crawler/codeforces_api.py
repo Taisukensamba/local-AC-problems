@@ -236,8 +236,14 @@ def sync_user_status(
             upsert_contests(conn, contests.values())
         if problems:
             upsert_problems(conn, problems.values())
+            tags_by_uid: dict[str, set[str]] = {}
             for s in submissions:
-                replace_problem_tags(conn, s["problem_uid"], s.get("problem_tags") or [])
+                problem_uid = s["problem_uid"]
+                tags_by_uid.setdefault(problem_uid, set()).update(
+                    str(tag) for tag in (s.get("problem_tags") or [])
+                )
+            for problem_uid, tags in tags_by_uid.items():
+                replace_problem_tags(conn, problem_uid, tags)
         stats = upsert_submissions_with_stats(conn, submissions)
         inserted += stats["inserted"]
         updated += stats["updated"]

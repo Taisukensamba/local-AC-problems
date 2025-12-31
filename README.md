@@ -5,6 +5,7 @@ AtCoder / Codeforces の問題・提出データを同期して、ローカル�
 ## セットアップ
 
 ```bash
+python3 --version  # 3.11+
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m pip install -r requirements.txt
@@ -97,6 +98,8 @@ curl -s -X POST http://127.0.0.1:8000/api/sync \
   -d '{"contest": false, "tasks": false, "submissions": true, "mode": "cookie"}'
 ```
 
+※ submissions は tasks 同期済みが前提です。
+
 submissions（差分）:
 ```bash
 curl -s -X POST http://127.0.0.1:8000/api/sync \
@@ -149,6 +152,11 @@ python3 scripts/import_difficulty.py
 - `data/cache`（HTTPキャッシュ）
 - `data/problem-models.json`（difficultyモデル）
 - `json/`（standings/difficulty の保存先）
+
+## DBの再構築
+
+既存DBのスキーマが古い場合は起動時に停止します。再構築する場合はバックアップ作成後に
+`AC_DB_ALLOW_REBUILD=true` を設定して起動してください（既存データは削除されます）。
 
 ## REVEL_SESSION の取り方
 

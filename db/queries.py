@@ -17,7 +17,7 @@ def search_problems(
     offset: int,
 ) -> list[dict]:
     conditions = []
-    params: list[object] = [user_id]
+    params: list[object] = [user_id, user_id]
 
     if status == "solved":
         conditions.append("COALESCE(pr.is_ac, 0) = 1")
@@ -53,7 +53,10 @@ def search_problems(
         "SELECT "
         "p.problem_uid, p.oj, p.contest_id, p.task_index, p.title, p.point, p.url, p.difficulty, "
         "COALESCE(pr.is_ac, 0) AS is_ac, "
-        "pr.first_ac_epoch, pr.last_submit_epoch, pr.ac_count, pr.wa_count, "
+        "pr.first_ac_epoch, pr.last_submit_epoch, pr.ac_count, pr.not_ac_count, "
+        "(SELECT COUNT(*) FROM submissions s2 "
+        "WHERE s2.problem_uid = p.problem_uid AND s2.user_id = ? "
+        "AND s2.result IN ('WA', 'WRONG_ANSWER')) AS wa_count, "
         "GROUP_CONCAT(pt.tag) "
         "FROM problems p "
         "LEFT JOIN progress pr ON pr.problem_uid = p.problem_uid AND pr.user_id = ? "
@@ -69,7 +72,7 @@ def search_problems(
     rows = cursor.fetchall()
     results = []
     for row in rows:
-        tags = row[13].split(",") if row[13] else []
+        tags = row[14].split(",") if row[14] else []
         results.append(
             {
                 "problem_uid": row[0],
@@ -84,7 +87,8 @@ def search_problems(
                 "first_ac_epoch": row[9],
                 "last_submit_epoch": row[10],
                 "ac_count": row[11] or 0,
-                "wa_count": row[12] or 0,
+                "not_ac_count": row[12] or 0,
+                "wa_count": row[13] or 0,
                 "tags": tags,
             }
         )

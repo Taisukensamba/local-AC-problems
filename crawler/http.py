@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 from urllib.request import Request, urlopen
-from urllib.error import HTTPError
 from urllib.parse import urlparse
 
 import random
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 class RateLimiter:
@@ -50,10 +52,12 @@ class HttpClient:
         cache: CacheConfig,
         time_fn: Callable[[], float] = time.time,
         sleep_fn: Callable[[float], None] = time.sleep,
+        timeout_sec: int = 10,
     ) -> None:
         self._limiter = RateLimiter(requests_per_second, time_fn=time_fn, sleep_fn=sleep_fn)
         self._cache = cache
         self._time_fn = time_fn
+        self._timeout_sec = timeout_sec
         self._user_agent = "AC-problems/0.1 (+https://github.com/your-org/ac-problems)"
 
     def get_text(self, url: str, headers: dict | None = None, use_cache: bool = True) -> str:
@@ -73,7 +77,7 @@ class HttpClient:
         if headers:
             base_headers.update(headers)
         req = Request(url, headers=base_headers)
-        with urlopen(req) as res:
+        with urlopen(req, timeout=self._timeout_sec) as res:
             body = res.read().decode("utf-8")
         if use_cache:
             _store_cache(cache_path, body, self._time_fn)
@@ -239,9 +243,12 @@ class AdaptiveHttpClient:
             except requests.RequestException:
                 latency_ms = int((self._time_fn() - start) * 1000)
                 self._throttler.on_failure("network_error")
-                print(
-                    f"[ERR network_error] delay->{self._throttler.delay:.2f}s "
-                    f"latency={latency_ms}ms retry={attempt + 1} url={_shorten_url(url)}"
+                logger.warning(
+                    "[ERR network_error] delay->%.2fs latency=%dms retry=%d url=%s",
+                    self._throttler.delay,
+                    latency_ms,
+                    attempt + 1,
+                    _shorten_url(url),
                 )
                 if attempt >= self._max_retries:
                     raise FetchError(url, None, "network_error")
@@ -253,30 +260,46 @@ class AdaptiveHttpClient:
             short_url = _shorten_url(url)
             if kind == "success":
                 self._throttler.on_success(resp, latency_ms)
-                print(
-                    f"[OK] status={resp.status_code} delay={self._throttler.delay:.2f}s "
-                    f"latency={latency_ms}ms url={short_url}"
+                logger.info(
+                    "[OK] status=%d delay=%.2fs latency=%dms url=%s",
+                    resp.status_code,
+                    self._throttler.delay,
+                    latency_ms,
+                    short_url,
                 )
                 if use_cache:
                     _store_cache(cache_path, body, self._time_fn)
                 return body
             if kind == "login_required":
-                print(
-                    f"[{resp.status_code} {kind}] delay={self._throttler.delay:.2f}s "
-                    f"latency={latency_ms}ms url={short_url}"
+                logger.warning(
+                    "[%d %s] delay=%.2fs latency=%dms url=%s",
+                    resp.status_code,
+                    kind,
+                    self._throttler.delay,
+                    latency_ms,
+                    short_url,
                 )
                 raise LoginRequiredError(url)
             if kind == "http_error":
-                print(
-                    f"[{resp.status_code} {kind}] delay={self._throttler.delay:.2f}s "
-                    f"latency={latency_ms}ms url={short_url}"
+                logger.warning(
+                    "[%d %s] delay=%.2fs latency=%dms url=%s",
+                    resp.status_code,
+                    kind,
+                    self._throttler.delay,
+                    latency_ms,
+                    short_url,
                 )
-                raise HTTPError(url, resp.status_code, resp.reason, resp.headers, None)
+                raise FetchError(url, resp.status_code, kind)
             before_delay = self._throttler.delay
             self._throttler.on_failure(kind)
-            print(
-                f"[{resp.status_code} {kind}] delay->{self._throttler.delay:.2f}s "
-                f"latency={latency_ms}ms retry={attempt + 1} url={short_url}"
+            logger.warning(
+                "[%d %s] delay->%.2fs latency=%dms retry=%d url=%s",
+                resp.status_code,
+                kind,
+                self._throttler.delay,
+                latency_ms,
+                attempt + 1,
+                short_url,
             )
             if attempt >= self._max_retries:
                 raise FetchError(url, resp.status_code, kind)

@@ -2,7 +2,6 @@ import json
 import pathlib
 import tempfile
 import unittest
-from urllib.error import HTTPError
 
 from config.loader import (
     AppConfig,
@@ -14,6 +13,7 @@ from config.loader import (
     RateLimitConfig,
     SyncConfig,
 )
+from crawler.http import FetchError
 from crawler.sync import run_sync
 from db.dao import upsert_contests, upsert_problems
 from db.schema import connect, init_db
@@ -227,7 +227,7 @@ class SyncTest(unittest.TestCase):
             return "[]"
 
         def fetch_html(_url: str, _headers: dict | None) -> str:
-            raise HTTPError(_url, 404, "Not Found", None, None)
+            raise FetchError(_url, 404, "http_error")
 
         config = AppConfig(
             atcoder=AtCoderConfig(
@@ -257,6 +257,27 @@ class SyncTest(unittest.TestCase):
                             "duration_sec": 600,
                             "rated_range": "~1999",
                             "category": "abc",
+                        }
+                    ],
+                )
+                upsert_problems(
+                    conn,
+                    [
+                        {
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "oj": atcoder_oj.name,
+                            "contest_uid": atcoder_oj.contest_uid("abc100"),
+                            "contest_id": "abc100",
+                            "task_index": "A",
+                            "title": "Alpha",
+                            "point": 100,
+                            "url": "https://atcoder.jp/contests/abc100/tasks/abc100_a",
+                            "difficulty": None,
+                            "solved_count": None,
+                            "tags_json": None,
+                            "updated_epoch": None,
                         }
                     ],
                 )

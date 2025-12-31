@@ -89,9 +89,9 @@ SELECT
     MIN(CASE WHEN s.result IN ('AC', 'OK') THEN s.epoch_second END) AS first_ac_epoch,
     MAX(s.epoch_second) AS last_submit_epoch,
     SUM(CASE WHEN s.result IN ('AC', 'OK') THEN 1 ELSE 0 END) AS ac_count,
-    SUM(CASE WHEN s.result IN ('WA', 'WRONG_ANSWER') THEN 1 ELSE 0 END) AS wa_count
+    SUM(CASE WHEN s.result IS NOT NULL AND s.result NOT IN ('AC', 'OK') THEN 1 ELSE 0 END) AS not_ac_count
 FROM problems p
 LEFT JOIN submissions s ON s.problem_uid = p.problem_uid
 GROUP BY p.problem_uid, s.user_id;
 
-PRAGMA user_version = 4;
+PRAGMA user_version = 6;

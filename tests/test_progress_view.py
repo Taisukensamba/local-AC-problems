@@ -79,11 +79,25 @@ class ProgressViewTest(unittest.TestCase):
                             "memory_kib": 512,
                             "url": "https://atcoder.jp/contests/abc100/submissions/2",
                         },
+                        {
+                            "submission_uid": atcoder_oj.submission_uid(3),
+                            "oj": atcoder_oj.name,
+                            "problem_uid": atcoder_oj.problem_uid(
+                                contest_id="abc100", index="A", name=None, problem_id="abc100_a"
+                            ),
+                            "user_id": "alice",
+                            "epoch_second": 130,
+                            "result": "TLE",
+                            "language": "Python",
+                            "exec_ms": 10,
+                            "memory_kib": 512,
+                            "url": "https://atcoder.jp/contests/abc100/submissions/3",
+                        },
                     ],
                 )
                 conn.commit()
                 row = conn.execute(
-                    "SELECT is_ac, first_ac_epoch, last_submit_epoch, ac_count, wa_count "
+                    "SELECT is_ac, first_ac_epoch, last_submit_epoch, ac_count, not_ac_count "
                     "FROM progress WHERE problem_uid = ? AND user_id = ?",
                     (
                         atcoder_oj.problem_uid(
@@ -94,4 +108,4 @@ class ProgressViewTest(unittest.TestCase):
                 ).fetchone()
             finally:
                 conn.close()
-        self.assertEqual(row, (1, 120, 120, 1, 1))
+        self.assertEqual(row, (1, 120, 130, 1, 2))
