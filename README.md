@@ -1,164 +1,56 @@
 # Local CP Problems
 
-AtCoder / Codeforces の問題・提出データを同期して、ローカルで閲覧・確認するためのツールです。
+AtCoder / Codeforces の問題や提出をローカルで見られるツールです。
 
-## セットアップ
+## まずは設定（必須）
 
-```bash
-python3 --version  # 3.11+
-python3 -m venv .venv
-. .venv/bin/activate
-python3 -m pip install -r requirements.txt
-```
-
-## 設定
-
-`config/config.toml` を編集します（環境変数でも可）。
+`config/config.toml` を編集します。
 
 ```toml
 [atcoder]
 user_id = "your_atcoder_id"
 
-[atcoder.sync]
-mode = "cookie" # api / cookie / hybrid
-
-[atcoder.difficulty]
-source_url = "/path/to/local-AC-problems/data/problem-models.json"
-
-[atcoder.cookie]
-revel_session = "REVEL_SESSION_HERE"
-
 [codeforces]
 handle = "your_codeforces_handle"
-include_gym = false
-
-[rate_limit]
-atcoder_rps = 1.0
-codeforces_min_interval_seconds = 2.0
-
-[cache]
-enabled = true
-ttl_sec = 3600
-dir_path = "data/cache"
 ```
 
-環境変数で上書きする場合:
-```bash
-export AC_USER_ID=your_atcoder_id
-export AC_REVEL_SESSION=REVEL_SESSION_HERE
-export AC_DIFFICULTY_SOURCE_URL=/path/to/local-AC-problems/data/problem-models.json
-export AC_CONFIG_PATH=config/config.toml
+提出まで同期したい場合は `REVEL_SESSION` が必要です。
+
+```toml
+[atcoder.cookie]
+revel_session = "REVEL_SESSION_HERE"
 ```
 
 ## 起動
 
 ```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python3 -m pip install -r requirements.txt
 make dev
 ```
 
 ブラウザで `http://127.0.0.1:8000/` を開きます。
 
-## 同期
+## 同期（任意）
 
+初回だけ:
 ```bash
-# 初期化
 ./scripts/sync_all.sh init
+```
 
-# 更新（差分）
+更新:
+```bash
 ./scripts/sync_all.sh
 ```
 
-### 個別同期
+## 生成されるもの
 
-contests:
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/sync \
-  -H 'Content-Type: application/json' \
-  -d '{"contest": true, "tasks": false, "submissions": false}'
-```
+- `data/atcoder.db`
+- `data/cache/`
+- `json/`
 
-tasks:
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/sync \
-  -H 'Content-Type: application/json' \
-  -d '{"contest": false, "tasks": true, "submissions": false}'
-```
-
-tasks（差分）:
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/sync \
-  -H 'Content-Type: application/json' \
-  -d '{"contest": false, "tasks": true, "submissions": false, "tasks_incremental": true}'
-```
-
-submissions（cookie）:
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/sync \
-  -H 'Content-Type: application/json' \
-  -d '{"contest": false, "tasks": false, "submissions": true, "mode": "cookie"}'
-```
-
-※ submissions は tasks 同期済みが前提です。
-
-submissions（差分）:
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/sync \
-  -H 'Content-Type: application/json' \
-  -d '{"contest": false, "tasks": false, "submissions": true, "mode": "cookie", "submissions_incremental": true}'
-```
-
-Codeforces problems:
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/sync/codeforces/problems
-```
-
-Codeforces submissions:
-```bash
-curl -s -X POST http://127.0.0.1:8000/api/sync/codeforces/submissions
-```
-
-進捗の確認:
-```bash
-curl -s http://127.0.0.1:8000/api/sync/status
-```
-
-## 難易度の推定（standings/jsonベース）
-
-```bash
-# 単発
-python3 scripts/calc_difficulty.py --category arc --slug arc121
-
-# 全件
-bash scripts/calc_difficulty_all.sh
-```
-
-推定後にDBへ反映:
-```bash
-python3 scripts/import_difficulty.py
-```
-
-## difficultyモデルの更新（AtCoder Problems準拠）
-
-```bash
-python3 scripts/update_problem_models.py
-python3 scripts/import_difficulty.py
-```
-
-## 生成物
-
-以下は実行時に生成されます。
-
-- `data/atcoder.db`（SQLite）
-- `data/cache`（HTTPキャッシュ）
-- `data/problem-models.json`（difficultyモデル）
-- `json/`（standings/difficulty の保存先）
-
-## DBの再構築
-
-既存DBのスキーマが古い場合は起動時に停止します。再構築する場合はバックアップ作成後に
-`AC_DB_ALLOW_REBUILD=true` を設定して起動してください（既存データは削除されます）。
-
-## REVEL_SESSION の取り方
+## REVEL_SESSION の取り方（AtCoder）
 
 - Chrome: DevTools → Application → Cookies → `https://atcoder.jp` → `REVEL_SESSION`
 - Firefox: DevTools → Storage → Cookies → `https://atcoder.jp` → `REVEL_SESSION`
