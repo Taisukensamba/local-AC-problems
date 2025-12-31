@@ -4,14 +4,30 @@ AtCoder / Codeforces の問題や提出をローカルで見られるツール�
 
 ## まずは設定（必須）
 
-`config/config.toml` を編集します。
+`config/config.toml` を編集します。（このファイルは .gitignore してあるため、README にベースを載せています）
 
 ```toml
 [atcoder]
-user_id = "your_atcoder_id"
+user_id = "your_atcoder_id"　
+
+[atcoder.sync]
+mode = "cookie"
+
+[atcoder.cookie]
+revel_session = "REVEL_SESSION_HERE"
 
 [codeforces]
 handle = "your_codeforces_handle"
+include_gym = false
+
+[rate_limit]
+atcoder_rps = 1.0
+codeforces_min_interval_seconds = 2.0
+
+[cache]
+enabled = true
+ttl_sec = 3600
+dir_path = "data/cache"
 ```
 
 提出まで同期したい場合は `REVEL_SESSION` が必要です。
