@@ -8,7 +8,7 @@ AtCoder / Codeforces の問題や提出をローカルで見られるツール�
 
 ```toml
 [atcoder]
-user_id = "your_atcoder_id"　
+user_id = "your_atcoder_id"
 
 [atcoder.sync]
 mode = "cookie"
